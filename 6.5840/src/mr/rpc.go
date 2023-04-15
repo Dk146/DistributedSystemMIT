@@ -29,10 +29,15 @@ type AskJobArgs struct {
 }
 
 type AskJobReply struct {
-	JobType   bool
+	TaskType  Task
 	NReduce   int
 	MapNumber int
 	FileName  string
+}
+
+type AckJobRequest struct {
+	MapNumber int
+	IsFinish  bool
 }
 
 // Add your RPC definitions here.

@@ -1,6 +1,7 @@
 package mr
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -8,12 +9,33 @@ import (
 	"os"
 )
 
+type Task int64
+
+const (
+	MapTask Task = iota
+	ReduceTask
+)
+
+type Status int64
+
+const (
+	Unstarted Status = iota
+	Pending
+	Done
+)
+
 type Coordinator struct {
 	// Your definitions here.
 	// Map task number and filename
-	unstartedJob map[int]string
-	turn         int
-	nReduce      int
+	MapJobs    map[int]*TaskStatus
+	turn       int
+	nReduce    int
+	currentJob Task
+}
+
+type TaskStatus struct {
+	filename string
+	status   Status
 }
 
 // Your code here -- RPC handlers for the worker to call.
@@ -27,20 +49,21 @@ func (c *Coordinator) Example(args *ExampleArgs, reply *ExampleReply) error {
 }
 
 func (c *Coordinator) AskJob(args *AskJobArgs, reply *AskJobReply) error {
-	reply.FileName, _ = c.GetUnstartedJob()
-	reply.JobType = false
+	reply.FileName, reply.MapNumber = c.GetUnstartedJob()
+	reply.TaskType = MapTask
 	reply.NReduce = c.nReduce
 	return nil
 }
 
 func (c *Coordinator) GetUnstartedJob() (string, int) {
-	c.turn++
-	pos := c.turn % c.nReduce
-	return c.unstartedJob[pos], pos
-}
-
-func (c *Coordinator) SetUnstartedJob(files []string) {
-	// c.unstartedJob = files
+	for k, v := range c.MapJobs {
+		if v.status == Unstarted {
+			fmt.Println("key", k, "   val", v.status)
+			v.status = Pending
+			return v.filename, k
+		}
+	}
+	return "", -1
 }
 
 // start a thread that listens for RPCs from worker.go
@@ -74,13 +97,14 @@ func MakeCoordinator(files []string, nReduce int) *Coordinator {
 	c := Coordinator{}
 
 	// Your code here.
-	c.unstartedJob = make(map[int]string)
+	c.MapJobs = make(map[int]*TaskStatus)
 	pos := 0
 	for _, v := range files {
-		c.unstartedJob[pos] = v
+		c.MapJobs[pos] = &TaskStatus{filename: v, status: Unstarted}
 		pos++
 	}
 	c.nReduce = nReduce
+	c.currentJob = MapTask
 
 	c.server()
 	return &c

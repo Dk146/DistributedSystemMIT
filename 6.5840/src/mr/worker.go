@@ -32,6 +32,11 @@ func ihash(key string) int {
 	return int(h.Sum32() & 0x7fffffff)
 }
 
+type MRWorker struct {
+	JobType    string
+	TaskNumber int
+}
+
 // main/mrworker.go calls this function.
 func Worker(mapf func(string, string) []KeyValue,
 	reducef func(string, []string) string) {
@@ -40,11 +45,16 @@ func Worker(mapf func(string, string) []KeyValue,
 
 	// uncomment to send the Example RPC to the coordinator.
 	CallExample()
-	filename, nReduce := AskJob()
-	mapTask(filename, mapf, nReduce)
+	for {
+		askJobReply := AskJob()
+		if askJobReply.FileName == "" {
+			break
+		}
+		mapTask(askJobReply.FileName, mapf, askJobReply.MapNumber, askJobReply.NReduce)
+	}
 }
 
-func AskJob() (string, int) {
+func AskJob() *AskJobReply {
 	args := AskJobArgs{}
 	args.X = 2
 	reply := AskJobReply{}
@@ -53,13 +63,17 @@ func AskJob() (string, int) {
 		fmt.Printf("reply.Y %v\n", reply.FileName)
 	} else {
 		fmt.Printf("call failed!\n")
-		return "", 0
+		return nil
 	}
 	fmt.Println("CHEHEE", reply.NReduce)
-	return reply.FileName, reply.NReduce
+	return &reply
 }
 
-func mapTask(filename string, mapf func(string, string) []KeyValue, nReduce int) {
+func AckJob() {
+
+}
+
+func mapTask(filename string, mapf func(string, string) []KeyValue, taskNumber, nReduce int) {
 	content, err := readFile(filename)
 	if err != nil {
 		return
@@ -68,7 +82,7 @@ func mapTask(filename string, mapf func(string, string) []KeyValue, nReduce int)
 	sort.Sort(ByKey(kva))
 	fmt.Println(kva)
 	// fmt.Fprintf(ofile, "%v %v\n", intermediate[i].Key, output)
-	writeFiles(kva, 0, nReduce)
+	writeFiles(kva, taskNumber, nReduce)
 }
 
 func createFiles(mapNumber, reduceNumber int) []string {
