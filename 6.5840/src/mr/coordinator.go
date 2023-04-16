@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/rpc"
 	"os"
+	"time"
 )
 
 type Task int64
@@ -21,14 +22,14 @@ type Status int64
 const (
 	Unstarted Status = iota
 	Pending
-	Done
+	Finished
 )
 
 type Coordinator struct {
 	// Your definitions here.
 	// Map task number and filename
 	MapJobs    map[int]*TaskStatus
-	turn       int
+	ReduceJobs map[int]*TaskStatus
 	nReduce    int
 	currentJob Task
 }
@@ -49,16 +50,42 @@ func (c *Coordinator) Example(args *ExampleArgs, reply *ExampleReply) error {
 }
 
 func (c *Coordinator) AskJob(args *AskJobArgs, reply *AskJobReply) error {
-	reply.FileName, reply.MapNumber = c.GetUnstartedJob()
 	reply.TaskType = MapTask
 	reply.NReduce = c.nReduce
+	reply.FileName, reply.TaskNumber = c.GetUnstartedMapJob()
+	if reply.FileName == "" && reply.TaskNumber == -1 {
+		time.Sleep(5 * time.Second)
+		reply.FileName, reply.TaskNumber = c.GetUnstartedReduceJob()
+		reply.TaskType = ReduceTask
+	}
 	return nil
 }
 
-func (c *Coordinator) GetUnstartedJob() (string, int) {
+func (c *Coordinator) AckJob(arg *AckJobRequest, reply interface{}) error {
+	if arg.TaskType == MapTask {
+		c.MapJobs[arg.TaskNumber].status = Finished
+	} else {
+		c.ReduceJobs[arg.TaskNumber].status = Finished
+	}
+	return nil
+}
+
+func (c *Coordinator) GetUnstartedMapJob() (string, int) {
 	for k, v := range c.MapJobs {
 		if v.status == Unstarted {
-			fmt.Println("key", k, "   val", v.status)
+			// fmt.Println("key", k, "   val", v.status)
+			v.status = Pending
+			return v.filename, k
+		}
+	}
+	c.currentJob = ReduceTask
+	return "", -1
+}
+
+func (c *Coordinator) GetUnstartedReduceJob() (string, int) {
+	for k, v := range c.ReduceJobs {
+		if v.status == Unstarted {
+			// fmt.Println("key", k, "   val", v.status)
 			v.status = Pending
 			return v.filename, k
 		}
@@ -86,7 +113,17 @@ func (c *Coordinator) Done() bool {
 	ret := false
 
 	// Your code here.
-
+	for _, v := range c.MapJobs {
+		if v.status == Unstarted {
+			return false
+		}
+	}
+	for _, v := range c.ReduceJobs {
+		if v.status == Unstarted {
+			return false
+		}
+	}
+	ret = true
 	return ret
 }
 
@@ -103,6 +140,12 @@ func MakeCoordinator(files []string, nReduce int) *Coordinator {
 		c.MapJobs[pos] = &TaskStatus{filename: v, status: Unstarted}
 		pos++
 	}
+
+	c.ReduceJobs = make(map[int]*TaskStatus)
+	for i := 0; i < nReduce; i++ {
+		c.ReduceJobs[i] = &TaskStatus{filename: fmt.Sprint(i), status: Unstarted}
+	}
+
 	c.nReduce = nReduce
 	c.currentJob = MapTask
 

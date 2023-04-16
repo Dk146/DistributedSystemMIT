@@ -44,13 +44,18 @@ func Worker(mapf func(string, string) []KeyValue,
 	// Your worker implementation here.
 
 	// uncomment to send the Example RPC to the coordinator.
-	CallExample()
+	// CallExample()
 	for {
 		askJobReply := AskJob()
-		if askJobReply.FileName == "" {
+		if askJobReply.FileName != "" && askJobReply.TaskType == MapTask {
+			mapTask(askJobReply.FileName, mapf, askJobReply.TaskNumber, askJobReply.NReduce)
+			AckJob(askJobReply.TaskNumber, MapTask)
+		} else if askJobReply.FileName != "" && askJobReply.TaskType == ReduceTask {
+			reduceTask(askJobReply.FileName, reducef, askJobReply.TaskNumber, askJobReply.NReduce)
+			AckJob(askJobReply.TaskNumber, ReduceTask)
+		} else {
 			break
 		}
-		mapTask(askJobReply.FileName, mapf, askJobReply.MapNumber, askJobReply.NReduce)
 	}
 }
 
@@ -59,18 +64,15 @@ func AskJob() *AskJobReply {
 	args.X = 2
 	reply := AskJobReply{}
 	ok := call("Coordinator.AskJob", &args, &reply)
-	if ok {
-		fmt.Printf("reply.Y %v\n", reply.FileName)
-	} else {
-		fmt.Printf("call failed!\n")
+	if !ok {
 		return nil
 	}
-	fmt.Println("CHEHEE", reply.NReduce)
 	return &reply
 }
 
-func AckJob() {
-
+func AckJob(taskNumber int, taskType Task) {
+	args := AckJobRequest{TaskNumber: taskNumber, TaskType: taskType}
+	call("Coordinator.AckJob", &args, nil)
 }
 
 func mapTask(filename string, mapf func(string, string) []KeyValue, taskNumber, nReduce int) {
@@ -80,20 +82,7 @@ func mapTask(filename string, mapf func(string, string) []KeyValue, taskNumber, 
 	}
 	kva := mapf(filename, string(content))
 	sort.Sort(ByKey(kva))
-	fmt.Println(kva)
-	// fmt.Fprintf(ofile, "%v %v\n", intermediate[i].Key, output)
 	writeFiles(kva, taskNumber, nReduce)
-}
-
-func createFiles(mapNumber, reduceNumber int) []string {
-	res := make([]string, mapNumber*reduceNumber)
-	for i := 0; i < mapNumber; i++ {
-		for j := 0; j < reduceNumber; j++ {
-			filename := fmt.Sprintf("mr-%v-%v", i, j)
-			res = append(res, filename)
-		}
-	}
-	return res
 }
 
 func writeFiles(intermediate []KeyValue, workerNumber, nReduce int) {
@@ -127,17 +116,60 @@ func writeFiles(intermediate []KeyValue, workerNumber, nReduce int) {
 	}
 }
 
-// func openFiles(mapNumber, reduceNumber int) error {
-// 	for i := 0; i < mapNumber; i++ {
-// 		for j := 0; j < reduceNumber; j++ {
-// 			filename := fmt.Sprintf("mr-%v-%v", i, j)
-// 			file, err := os.Open(filename) // For read access.
-// 			if err != nil {
-// 				log.Fatal(err)
-// 			}
-// 		}
-// 	}
-// }
+func reduceTask(reduceTask string, reducef func(string, []string) string, taskNumber, nReduce int) {
+	kva := []KeyValue{}
+	for i := 0; i < 8; i++ {
+		filename := fmt.Sprintf("mr-%v-%v", i, reduceTask)
+		// fmt.Println(reduceTask)
+		// fmt.Println(filename)
+		file, err := os.OpenFile(filename, os.O_RDWR, 0644)
+		if err != nil {
+			fmt.Println("Err open file")
+			return
+		}
+		dec := json.NewDecoder(file)
+		for {
+			var kv KeyValue
+			if err := dec.Decode(&kv); err != nil {
+				break
+			}
+			kva = append(kva, kv)
+		}
+		file.Close()
+		// fmt.Println("len temp: ", len(kva))
+	}
+
+	sort.Sort(ByKey(kva))
+	// fmt.Println("len: ", len(kva))
+
+	oname := "mr-out-" + reduceTask
+	ofile, _ := os.Create(oname)
+
+	//
+	// call Reduce on each distinct key in intermediate[],
+	// and print the result to mr-out-.
+	//
+	i := 0
+	for i < len(kva) {
+		j := i + 1
+		for j < len(kva) && kva[j].Key == kva[i].Key {
+			j++
+		}
+		values := []string{}
+		for k := i; k < j; k++ {
+			values = append(values, kva[k].Value)
+		}
+		output := reducef(kva[i].Key, values)
+
+		// this is the correct format for each line of Reduce output.
+		fmt.Fprintf(ofile, "%v %v\n", kva[i].Key, output)
+
+		i = j
+	}
+
+	ofile.Close()
+
+}
 
 func readFile(filename string) ([]byte, error) {
 	file, err := os.Open(filename)
