@@ -89,12 +89,18 @@ func (c *Coordinator) GetUnstartedMapJob() (string, int) {
 }
 
 func (c *Coordinator) GetUnstartedReduceJob() (string, int) {
+	count := 0
 	for k, v := range c.ReduceJobs {
 		if v.status == Unstarted {
 			// fmt.Println("key", k, "   val", v.status)
 			v.status = Pending
 			return v.filename, k
+		} else if v.status == Pending {
+			count++
 		}
+	}
+	if count != 0 {
+		return "", -2
 	}
 	return "", -1
 }
@@ -117,15 +123,14 @@ func (c *Coordinator) server() {
 // if the entire job has finished.
 func (c *Coordinator) Done() bool {
 	ret := false
-
 	// Your code here.
 	for _, v := range c.MapJobs {
-		if v.status == Unstarted {
+		if v.status != Finished {
 			return false
 		}
 	}
 	for _, v := range c.ReduceJobs {
-		if v.status == Unstarted {
+		if v.status != Finished {
 			return false
 		}
 	}

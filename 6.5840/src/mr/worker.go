@@ -58,9 +58,12 @@ func Worker(mapf func(string, string) []KeyValue,
 				fmt.Println("Waiting")
 			}
 		} else {
-			if askJobReply.FileName != "" {
+			if askJobReply.FileName != "" && askJobReply.TaskNumber >= 0 {
 				reduceTask(askJobReply.FileName, reducef, askJobReply.TaskNumber, askJobReply.NReduce)
 				AckJob(askJobReply.TaskNumber, ReduceTask)
+			} else if askJobReply.TaskNumber == -2 {
+				fmt.Println("check")
+				time.Sleep(1 * time.Second)
 			} else {
 				break
 			}
@@ -80,10 +83,10 @@ func AskJob() *AskJobReply {
 	return &reply
 }
 
-func AckJob(taskNumber int, taskType Task) {
+func AckJob(taskNumber int, taskType Task) bool {
 	args := AckJobRequest{TaskNumber: taskNumber, TaskType: taskType}
 	reply := AckJobResponse{}
-	call("Coordinator.AckJob", &args, &reply)
+	return call("Coordinator.AckJob", &args, &reply)
 }
 
 func mapTask(filename string, mapf func(string, string) []KeyValue, taskNumber, nReduce int) {
@@ -132,12 +135,11 @@ func reduceTask(reduceTask string, reducef func(string, []string) string, taskNu
 	for i := 0; i < 8; i++ {
 		filename := fmt.Sprintf("mr-%v-%v", i, reduceTask)
 		// fmt.Println(reduceTask)
-		// fmt.Println(filename)
 		fmt.Println(filename)
 		file, err := os.OpenFile(filename, os.O_RDWR, 0644)
 		if err != nil {
-			fmt.Println(filename)
-			fmt.Println("Err open file")
+			// fmt.Println(filename)
+			// fmt.Println("Err open file")
 			continue
 		}
 		dec := json.NewDecoder(file)
@@ -157,6 +159,7 @@ func reduceTask(reduceTask string, reducef func(string, []string) string, taskNu
 
 	oname := "mr-out-" + reduceTask
 	ofile, _ := os.Create(oname)
+	defer ofile.Close()
 
 	//
 	// call Reduce on each distinct key in intermediate[],
@@ -179,9 +182,7 @@ func reduceTask(reduceTask string, reducef func(string, []string) string, taskNu
 
 		i = j
 	}
-
-	ofile.Close()
-
+	fmt.Println(oname)
 }
 
 func readFile(filename string) ([]byte, error) {
@@ -196,33 +197,6 @@ func readFile(filename string) ([]byte, error) {
 	}
 	file.Close()
 	return content, nil
-}
-
-// example function to show how to make an RPC call to the coordinator.
-//
-// the RPC argument and reply types are defined in rpc.go.
-func CallExample() {
-
-	// declare an argument structure.
-	args := ExampleArgs{}
-
-	// fill in the argument(s).
-	args.X = 99
-
-	// declare a reply structure.
-	reply := ExampleReply{}
-
-	// send the RPC request, wait for the reply.
-	// the "Coordinator.Example" tells the
-	// receiving server that we'd like to call
-	// the Example() method of struct Coordinator.
-	ok := call("Coordinator.Example", &args, &reply)
-	if ok {
-		// reply.Y should be 100.
-		fmt.Printf("reply.Y %v\n", reply.Y)
-	} else {
-		fmt.Printf("call failed!\n")
-	}
 }
 
 // send an RPC request to the coordinator, wait for the response.

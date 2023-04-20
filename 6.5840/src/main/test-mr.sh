@@ -24,6 +24,7 @@ maybe_quiet() {
     if [ "$ISQUIET" == "quiet" ]; then
       "$@" > /dev/null 2>&1
     else
+      echo $@
       "$@"
     fi
 }
@@ -60,11 +61,11 @@ rm -f mr-*
 # make sure software is freshly built.
 (cd ../../mrapps && go clean)
 (cd .. && go clean)
-(cd ../../mrapps && go build $RACE -buildmode=plugin wc.go) || exit 1
-(cd ../../mrapps && go build $RACE -buildmode=plugin indexer.go) || exit 1
-(cd ../../mrapps && go build $RACE -buildmode=plugin mtiming.go) || exit 1
-(cd ../../mrapps && go build $RACE -buildmode=plugin rtiming.go) || exit 1
-(cd ../../mrapps && go build $RACE -buildmode=plugin jobcount.go) || exit 1
+# (cd ../../mrapps && go build $RACE -buildmode=plugin wc.go) || exit 1
+# (cd ../../mrapps && go build $RACE -buildmode=plugin indexer.go) || exit 1
+# (cd ../../mrapps && go build $RACE -buildmode=plugin mtiming.go) || exit 1
+# (cd ../../mrapps && go build $RACE -buildmode=plugin rtiming.go) || exit 1
+# (cd ../../mrapps && go build $RACE -buildmode=plugin jobcount.go) || exit 1
 (cd ../../mrapps && go build $RACE -buildmode=plugin early_exit.go) || exit 1
 (cd ../../mrapps && go build $RACE -buildmode=plugin crash.go) || exit 1
 (cd ../../mrapps && go build $RACE -buildmode=plugin nocrash.go) || exit 1
@@ -231,7 +232,8 @@ echo '***' Starting early exit test.
 
 DF=anydone$$
 rm -f $DF
-
+now=$(date +"%T")
+echo "Current time : $now"
 (maybe_quiet $TIMEOUT ../mrcoordinator ../pg*txt; touch $DF) &
 
 # give the coordinator time to create the sockets.
@@ -261,6 +263,8 @@ fi
 
 rm -f $DF
 
+now=$(date +"%T")
+echo "Current time : $now"
 # a process has exited. this means that the output should be finalized
 # otherwise, either a worker or the coordinator exited early
 sort mr-out* | grep . > mr-wc-all-initial
@@ -268,16 +272,18 @@ sort mr-out* | grep . > mr-wc-all-initial
 # wait for remaining workers and coordinator to exit.
 wait
 
-# # compare initial and final outputs
-# sort mr-out* | grep . > mr-wc-all-final
-# if cmp mr-wc-all-final mr-wc-all-initial
-# then
-#   echo '---' early exit test: PASS
-# else
-#   echo '---' output changed after first worker exited
-#   echo '---' early exit test: FAIL
-#   failed_any=1
-# fi
+now=$(date +"%T")
+echo "Current time : $now"
+# compare initial and final outputs
+sort mr-out* | grep . > mr-wc-all-final
+if cmp mr-wc-all-final mr-wc-all-initial
+then
+  echo '---' early exit test: PASS
+else
+  echo '---' output changed after first worker exited
+  echo '---' early exit test: FAIL
+  failed_any=1
+fi
 # rm -f mr-*
 
 # #########################################################
