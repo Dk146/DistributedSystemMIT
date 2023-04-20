@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/rpc"
 	"os"
-	"time"
 )
 
 type Task int64
@@ -50,20 +49,29 @@ func (c *Coordinator) Example(args *ExampleArgs, reply *ExampleReply) error {
 }
 
 func (c *Coordinator) AskJob(args *AskJobArgs, reply *AskJobReply) error {
-	reply.TaskType = MapTask
 	reply.NReduce = c.nReduce
-	reply.FileName, reply.TaskNumber = c.GetUnstartedMapJob()
-	if reply.FileName == "" && reply.TaskNumber == -1 {
-		time.Sleep(5 * time.Second)
+	if c.currentJob == MapTask {
+		reply.FileName, reply.TaskNumber = c.GetUnstartedMapJob()
+		reply.TaskType = MapTask
+	} else {
 		reply.FileName, reply.TaskNumber = c.GetUnstartedReduceJob()
 		reply.TaskType = ReduceTask
 	}
 	return nil
 }
 
-func (c *Coordinator) AckJob(arg *AckJobRequest, reply interface{}) error {
+func (c *Coordinator) AckJob(arg *AckJobRequest, reply *AckJobResponse) error {
 	if arg.TaskType == MapTask {
 		c.MapJobs[arg.TaskNumber].status = Finished
+		count := len(c.MapJobs)
+		for _, v := range c.MapJobs {
+			if v.status == Finished {
+				count--
+			}
+		}
+		if count == 0 {
+			c.currentJob = ReduceTask
+		}
 	} else {
 		c.ReduceJobs[arg.TaskNumber].status = Finished
 	}
@@ -73,12 +81,10 @@ func (c *Coordinator) AckJob(arg *AckJobRequest, reply interface{}) error {
 func (c *Coordinator) GetUnstartedMapJob() (string, int) {
 	for k, v := range c.MapJobs {
 		if v.status == Unstarted {
-			// fmt.Println("key", k, "   val", v.status)
 			v.status = Pending
 			return v.filename, k
 		}
 	}
-	c.currentJob = ReduceTask
 	return "", -1
 }
 

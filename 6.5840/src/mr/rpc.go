@@ -40,6 +40,9 @@ type AckJobRequest struct {
 	TaskType   Task
 }
 
+type AckJobResponse struct {
+}
+
 // Add your RPC definitions here.
 
 // Cook up a unique-ish UNIX-domain socket name

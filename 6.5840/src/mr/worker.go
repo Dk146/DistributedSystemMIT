@@ -9,6 +9,7 @@ import (
 	"net/rpc"
 	"os"
 	"sort"
+	"time"
 )
 
 // Map functions return a slice of KeyValue.
@@ -47,16 +48,25 @@ func Worker(mapf func(string, string) []KeyValue,
 	// CallExample()
 	for {
 		askJobReply := AskJob()
-		if askJobReply.FileName != "" && askJobReply.TaskType == MapTask {
-			mapTask(askJobReply.FileName, mapf, askJobReply.TaskNumber, askJobReply.NReduce)
-			AckJob(askJobReply.TaskNumber, MapTask)
-		} else if askJobReply.FileName != "" && askJobReply.TaskType == ReduceTask {
-			reduceTask(askJobReply.FileName, reducef, askJobReply.TaskNumber, askJobReply.NReduce)
-			AckJob(askJobReply.TaskNumber, ReduceTask)
+
+		if askJobReply.TaskType == MapTask {
+			if askJobReply.FileName != "" {
+				mapTask(askJobReply.FileName, mapf, askJobReply.TaskNumber, askJobReply.NReduce)
+				AckJob(askJobReply.TaskNumber, MapTask)
+			} else {
+				time.Sleep(1 * time.Second)
+				fmt.Println("Waiting")
+			}
 		} else {
-			break
+			if askJobReply.FileName != "" {
+				reduceTask(askJobReply.FileName, reducef, askJobReply.TaskNumber, askJobReply.NReduce)
+				AckJob(askJobReply.TaskNumber, ReduceTask)
+			} else {
+				break
+			}
 		}
 	}
+	fmt.Println("Check")
 }
 
 func AskJob() *AskJobReply {
@@ -72,7 +82,8 @@ func AskJob() *AskJobReply {
 
 func AckJob(taskNumber int, taskType Task) {
 	args := AckJobRequest{TaskNumber: taskNumber, TaskType: taskType}
-	call("Coordinator.AckJob", &args, nil)
+	reply := AckJobResponse{}
+	call("Coordinator.AckJob", &args, &reply)
 }
 
 func mapTask(filename string, mapf func(string, string) []KeyValue, taskNumber, nReduce int) {
@@ -122,10 +133,12 @@ func reduceTask(reduceTask string, reducef func(string, []string) string, taskNu
 		filename := fmt.Sprintf("mr-%v-%v", i, reduceTask)
 		// fmt.Println(reduceTask)
 		// fmt.Println(filename)
+		fmt.Println(filename)
 		file, err := os.OpenFile(filename, os.O_RDWR, 0644)
 		if err != nil {
+			fmt.Println(filename)
 			fmt.Println("Err open file")
-			return
+			continue
 		}
 		dec := json.NewDecoder(file)
 		for {
