@@ -25,6 +25,13 @@ func (a ByKey) Len() int           { return len(a) }
 func (a ByKey) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a ByKey) Less(i, j int) bool { return a[i].Key < a[j].Key }
 
+type ByHashkey []KeyValue
+
+// for sorting by hashKey.
+func (a ByHashkey) Len() int           { return len(a) }
+func (a ByHashkey) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a ByHashkey) Less(i, j int) bool { return ihash(a[i].Key)%10 < ihash(a[j].Key)%10 }
+
 // use ihash(key) % NReduce to choose the reduce
 // task number for each KeyValue emitted by Map.
 func ihash(key string) int {
@@ -96,6 +103,7 @@ func mapTask(filename string, mapf func(string, string) []KeyValue, taskNumber, 
 	}
 	kva := mapf(filename, string(content))
 	sort.Sort(ByKey(kva))
+	sort.Sort(ByHashkey(kva))
 	writeFiles(kva, taskNumber, nReduce)
 }
 
@@ -103,20 +111,32 @@ func writeFiles(intermediate []KeyValue, workerNumber, nReduce int) {
 	i := 0
 	for i < len(intermediate) {
 		j := i + 1
-		for j < len(intermediate) && intermediate[j].Key == intermediate[i].Key {
+		for j < len(intermediate) && ihash(intermediate[j].Key)%nReduce == ihash(intermediate[i].Key)%nReduce {
 			j++
+			// if intermediate[j].Key != intermediate[i].Key {
+			// 	fmt.Println("HEHHEHEHEHEHEEH")
+			// }
 		}
 		values := []KeyValue{}
 		for k := i; k < j; k++ {
 			values = append(values, intermediate[k])
 		}
 
+		// fmt.Println(values)
+
 		// If the file doesn't exist, create it, or append to the file
 		filename := fmt.Sprintf("mr-%v-%v", workerNumber, ihash(intermediate[i].Key)%nReduce)
-		f, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		f, err := ioutil.TempFile("", filename+"*")
 		if err != nil {
+			fmt.Println("FATAL ERROR")
 			log.Fatal(err)
 		}
+		// f, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		// if err != nil {
+		// 	log.Fatal(err)
+		// }
+		// var buf bytes.Buffer
+		// foo := bufio.NewWriter(&buf)
 		enc := json.NewEncoder(f)
 		for _, kv := range values {
 			err := enc.Encode(&kv)
@@ -124,11 +144,24 @@ func writeFiles(intermediate []KeyValue, workerNumber, nReduce int) {
 				return
 			}
 		}
+		// fmt.Println(foo)
+
+		os.Rename(f.Name(), filename)
 		f.Close()
 
 		i = j
 	}
 }
+
+// func createTempFiles(workerNumber, nReduce int) ([]*os.File, error) {
+// 	for i := 0; i < nReduce; i++ {
+// 		filename := fmt.Sprintf("mr-%v-%v", workerNumber, i)
+// 		f, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+// 		if err != nil {
+// 			log.Fatal(err)
+// 		}
+// 	}
+// }
 
 func reduceTask(reduceTask string, reducef func(string, []string) string, taskNumber, nReduce int) {
 	kva := []KeyValue{}
@@ -138,7 +171,6 @@ func reduceTask(reduceTask string, reducef func(string, []string) string, taskNu
 		fmt.Println(filename)
 		file, err := os.OpenFile(filename, os.O_RDWR, 0644)
 		if err != nil {
-			// fmt.Println(filename)
 			// fmt.Println("Err open file")
 			continue
 		}
@@ -155,11 +187,17 @@ func reduceTask(reduceTask string, reducef func(string, []string) string, taskNu
 	}
 
 	sort.Sort(ByKey(kva))
-	// fmt.Println("len: ", len(kva))
 
-	oname := "mr-out-" + reduceTask
-	ofile, _ := os.Create(oname)
-	defer ofile.Close()
+	fileName := "mr-out-" + reduceTask
+	// ofile, _ := os.Create(oname)
+	// defer ofile.Close()
+
+	// filename := fmt.Sprintf("mr-%v-%v", workerNumber, ihash(intermediate[i].Key)%nReduce)
+	f, err := ioutil.TempFile("", fileName+"*")
+	if err != nil {
+		fmt.Println("FATAL ERROR")
+		log.Fatal(err)
+	}
 
 	//
 	// call Reduce on each distinct key in intermediate[],
@@ -178,11 +216,14 @@ func reduceTask(reduceTask string, reducef func(string, []string) string, taskNu
 		output := reducef(kva[i].Key, values)
 
 		// this is the correct format for each line of Reduce output.
-		fmt.Fprintf(ofile, "%v %v\n", kva[i].Key, output)
+		fmt.Fprintf(f, "%v %v\n", kva[i].Key, output)
 
 		i = j
 	}
-	fmt.Println(oname)
+	os.Rename(f.Name(), fileName)
+	f.Close()
+
+	fmt.Println(fileName)
 }
 
 func readFile(filename string) ([]byte, error) {
