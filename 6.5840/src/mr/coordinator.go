@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/rpc"
 	"os"
+	"time"
 )
 
 type Task int64
@@ -34,8 +35,9 @@ type Coordinator struct {
 }
 
 type TaskStatus struct {
-	filename string
-	status   Status
+	filename    string
+	status      Status
+	startedTime int64
 }
 
 // Your code here -- RPC handlers for the worker to call.
@@ -82,6 +84,7 @@ func (c *Coordinator) GetUnstartedMapJob() (string, int) {
 	for k, v := range c.MapJobs {
 		if v.status == Unstarted {
 			v.status = Pending
+			v.startedTime = time.Now().Unix()
 			return v.filename, k
 		}
 	}
@@ -94,6 +97,7 @@ func (c *Coordinator) GetUnstartedReduceJob() (string, int) {
 		if v.status == Unstarted {
 			// fmt.Println("key", k, "   val", v.status)
 			v.status = Pending
+			v.startedTime = time.Now().Unix()
 			return v.filename, k
 		} else if v.status == Pending {
 			count++
@@ -122,19 +126,31 @@ func (c *Coordinator) server() {
 // main/mrcoordinator.go calls Done() periodically to find out
 // if the entire job has finished.
 func (c *Coordinator) Done() bool {
-	ret := false
+	ret := true
 	// Your code here.
 	for _, v := range c.MapJobs {
 		if v.status != Finished {
-			return false
+			ret = false
 		}
+		if v.status == Pending {
+			if time.Now().Unix()-v.startedTime >= 10 {
+				v.status = Unstarted
+			}
+		}
+	}
+	if !ret {
+		return ret
 	}
 	for _, v := range c.ReduceJobs {
 		if v.status != Finished {
-			return false
+			ret = false
+		}
+		if v.status == Pending {
+			if time.Now().Unix()-v.startedTime >= 10 {
+				v.status = Unstarted
+			}
 		}
 	}
-	ret = true
 	return ret
 }
 
@@ -148,13 +164,13 @@ func MakeCoordinator(files []string, nReduce int) *Coordinator {
 	c.MapJobs = make(map[int]*TaskStatus)
 	pos := 0
 	for _, v := range files {
-		c.MapJobs[pos] = &TaskStatus{filename: v, status: Unstarted}
+		c.MapJobs[pos] = &TaskStatus{filename: v, status: Unstarted, startedTime: 0}
 		pos++
 	}
 
 	c.ReduceJobs = make(map[int]*TaskStatus)
 	for i := 0; i < nReduce; i++ {
-		c.ReduceJobs[i] = &TaskStatus{filename: fmt.Sprint(i), status: Unstarted}
+		c.ReduceJobs[i] = &TaskStatus{filename: fmt.Sprint(i), status: Unstarted, startedTime: 0}
 	}
 
 	c.nReduce = nReduce

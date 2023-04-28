@@ -62,21 +62,18 @@ func Worker(mapf func(string, string) []KeyValue,
 				AckJob(askJobReply.TaskNumber, MapTask)
 			} else {
 				time.Sleep(1 * time.Second)
-				fmt.Println("Waiting")
 			}
 		} else {
 			if askJobReply.FileName != "" && askJobReply.TaskNumber >= 0 {
 				reduceTask(askJobReply.FileName, reducef, askJobReply.TaskNumber, askJobReply.NReduce)
 				AckJob(askJobReply.TaskNumber, ReduceTask)
 			} else if askJobReply.TaskNumber == -2 {
-				fmt.Println("check")
 				time.Sleep(1 * time.Second)
 			} else {
 				break
 			}
 		}
 	}
-	fmt.Println("Check")
 }
 
 func AskJob() *AskJobReply {
@@ -113,16 +110,11 @@ func writeFiles(intermediate []KeyValue, workerNumber, nReduce int) {
 		j := i + 1
 		for j < len(intermediate) && ihash(intermediate[j].Key)%nReduce == ihash(intermediate[i].Key)%nReduce {
 			j++
-			// if intermediate[j].Key != intermediate[i].Key {
-			// 	fmt.Println("HEHHEHEHEHEHEEH")
-			// }
 		}
 		values := []KeyValue{}
 		for k := i; k < j; k++ {
 			values = append(values, intermediate[k])
 		}
-
-		// fmt.Println(values)
 
 		// If the file doesn't exist, create it, or append to the file
 		filename := fmt.Sprintf("mr-%v-%v", workerNumber, ihash(intermediate[i].Key)%nReduce)
@@ -131,12 +123,6 @@ func writeFiles(intermediate []KeyValue, workerNumber, nReduce int) {
 			fmt.Println("FATAL ERROR")
 			log.Fatal(err)
 		}
-		// f, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		// if err != nil {
-		// 	log.Fatal(err)
-		// }
-		// var buf bytes.Buffer
-		// foo := bufio.NewWriter(&buf)
 		enc := json.NewEncoder(f)
 		for _, kv := range values {
 			err := enc.Encode(&kv)
@@ -144,7 +130,6 @@ func writeFiles(intermediate []KeyValue, workerNumber, nReduce int) {
 				return
 			}
 		}
-		// fmt.Println(foo)
 
 		os.Rename(f.Name(), filename)
 		f.Close()
@@ -153,22 +138,11 @@ func writeFiles(intermediate []KeyValue, workerNumber, nReduce int) {
 	}
 }
 
-// func createTempFiles(workerNumber, nReduce int) ([]*os.File, error) {
-// 	for i := 0; i < nReduce; i++ {
-// 		filename := fmt.Sprintf("mr-%v-%v", workerNumber, i)
-// 		f, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-// 		if err != nil {
-// 			log.Fatal(err)
-// 		}
-// 	}
-// }
-
 func reduceTask(reduceTask string, reducef func(string, []string) string, taskNumber, nReduce int) {
 	kva := []KeyValue{}
 	for i := 0; i < 8; i++ {
 		filename := fmt.Sprintf("mr-%v-%v", i, reduceTask)
-		// fmt.Println(reduceTask)
-		fmt.Println(filename)
+		// fmt.Println(filename)
 		file, err := os.OpenFile(filename, os.O_RDWR, 0644)
 		if err != nil {
 			// fmt.Println("Err open file")
@@ -183,16 +157,11 @@ func reduceTask(reduceTask string, reducef func(string, []string) string, taskNu
 			kva = append(kva, kv)
 		}
 		file.Close()
-		// fmt.Println("len temp: ", len(kva))
 	}
 
 	sort.Sort(ByKey(kva))
 
 	fileName := "mr-out-" + reduceTask
-	// ofile, _ := os.Create(oname)
-	// defer ofile.Close()
-
-	// filename := fmt.Sprintf("mr-%v-%v", workerNumber, ihash(intermediate[i].Key)%nReduce)
 	f, err := ioutil.TempFile("", fileName+"*")
 	if err != nil {
 		fmt.Println("FATAL ERROR")
@@ -222,8 +191,6 @@ func reduceTask(reduceTask string, reducef func(string, []string) string, taskNu
 	}
 	os.Rename(f.Name(), fileName)
 	f.Close()
-
-	fmt.Println(fileName)
 }
 
 func readFile(filename string) ([]byte, error) {
