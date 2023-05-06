@@ -19,6 +19,8 @@ package raft
 
 import (
 	//	"bytes"
+
+	"fmt"
 	"math/rand"
 	"sync"
 	"sync/atomic"
@@ -26,6 +28,14 @@ import (
 
 	//	"6.5840/labgob"
 	"6.5840/labrpc"
+)
+
+type State int64
+
+const (
+	Follower State = iota
+	Candidate
+	Leader
 )
 
 // as each Raft peer becomes aware that successive log entries are
@@ -66,6 +76,9 @@ type Raft struct {
 	votedFor    int
 	log         []Entry
 
+	state         State
+	lastHeartBeat time.Time
+
 	// Volatile state on all servers
 	commitIndex int
 	lastApplied int
@@ -83,6 +96,13 @@ func (rf *Raft) GetState() (int, bool) {
 	var term int
 	var isleader bool
 	// Your code here (2A).
+	rf.mu.Lock()
+	term = rf.currentTerm
+	isleader = false
+	if rf.state == Leader {
+		isleader = true
+	}
+	rf.mu.Unlock()
 	return term, isleader
 }
 
@@ -154,6 +174,23 @@ type RequestVoteReply struct {
 // example RequestVote RPC handler.
 func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	// Your code here (2A, 2B).
+	reply.VoteGranted = false
+	reply.Term = rf.currentTerm
+	fmt.Println("Request term: ", args.Term, "   current term: ", rf.currentTerm)
+	if args.Term < rf.currentTerm || rf.state == Follower {
+		reply.Term = rf.currentTerm
+		return
+	}
+	if (rf.votedFor == -1 || rf.votedFor == args.CandidatedId) && rf.currentTerm <= args.Term {
+		rf.currentTerm = args.Term
+		rf.votedFor = args.CandidatedId
+		rf.state = Follower
+		reply.VoteGranted = true
+	} else if rf.currentTerm < args.Term {
+		rf.currentTerm = args.Term
+		rf.votedFor = -1
+		rf.state = Follower
+	}
 }
 
 // example code to send a RequestVote RPC to a server.
@@ -231,13 +268,87 @@ func (rf *Raft) killed() bool {
 
 func (rf *Raft) ticker() {
 	for rf.killed() == false {
-
 		// Your code here (2A)
 		// Check if a leader election should be started.
 
 		// pause for a random amount of time between 50 and 350
 		// milliseconds.
 		ms := 50 + (rand.Int63() % 300)
+		time.Sleep(time.Duration(ms) * time.Millisecond)
+
+		count := 1
+		now := time.Now()
+		if now.Sub(rf.lastHeartBeat).Milliseconds() > ms+250 && rf.state != Leader {
+			fmt.Println(rf.me, " Start election")
+			rf.state = Candidate
+			rf.currentTerm++
+			rf.votedFor = rf.me
+			go func() {
+				for i := 0; i < len(rf.peers) && i != rf.me; i++ {
+					args := RequestVoteArgs{Term: rf.currentTerm, CandidatedId: rf.me}
+					reply := RequestVoteReply{}
+					rf.sendRequestVote(i, &args, &reply)
+					if reply.Term > rf.currentTerm {
+						rf.currentTerm = reply.Term
+						rf.votedFor = -1
+						rf.state = Follower
+						break
+					}
+					if reply.VoteGranted {
+						count++
+						if count >= len(rf.peers)/2+1 {
+							fmt.Println(rf.me, " Become Leader in term ", rf.currentTerm)
+							rf.state = Leader
+							return
+						}
+
+					}
+				}
+				rf.votedFor = -1
+			}()
+		}
+	}
+}
+
+func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *AppendEntriesReply) bool {
+	ok := rf.peers[server].Call("Raft.AppendEntries", args, reply)
+	return ok
+}
+
+func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply) {
+	rf.lastHeartBeat = time.Now()
+	if rf.currentTerm < args.Term {
+		rf.currentTerm = args.Term
+	}
+	if rf.state == Candidate {
+		rf.state = Follower
+	}
+	// fmt.Println("receive hearbeat")
+	// TODO: implement
+}
+
+func (rf *Raft) PeriodHeartBeat() {
+	for rf.killed() == false {
+		if rf.state == Leader {
+			for i := 0; i < len(rf.peers) && i != rf.me; i++ {
+				args := AppendEntriesArgs{
+					Term:              rf.currentTerm,
+					LeaderID:          rf.me,
+					PrevLogIndex:      -1,
+					PrevLogTerm:       -1,
+					Entries:           []Entry{},
+					LeaderCommitIndex: -1,
+				}
+				reply := AppendEntriesReply{}
+				rf.sendAppendEntries(i, &args, &reply)
+				if reply.Term > rf.currentTerm {
+					rf.currentTerm = reply.Term
+					rf.votedFor = -1
+					rf.state = Follower
+				}
+			}
+		}
+		ms := 100
 		time.Sleep(time.Duration(ms) * time.Millisecond)
 	}
 }
@@ -259,6 +370,12 @@ func Make(peers []*labrpc.ClientEnd, me int,
 	rf.me = me
 
 	// Your initialization code here (2A, 2B, 2C).
+	rf.lastHeartBeat = time.Now()
+	rf.currentTerm = 0
+	rf.votedFor = -1
+	rf.state = Follower
+
+	go rf.PeriodHeartBeat()
 
 	// initialize from state persisted before a crash
 	rf.readPersist(persister.ReadRaftState())
