@@ -137,18 +137,18 @@ func (rf *Raft) Snapshot(index int, snapshot []byte) {
 // field names must start with capital letters!
 type RequestVoteArgs struct {
 	// Your data here (2A, 2B).
-	term         int
-	candidatedId int
-	lastLogIndex int
-	lastLogTerm  int
+	Term         int
+	CandidatedId int
+	LastLogIndex int
+	LastLogTerm  int
 }
 
 // example RequestVote RPC reply structure.
 // field names must start with capital letters!
 type RequestVoteReply struct {
 	// Your data here (2A).
-	term        int
-	voteGranted bool
+	Term        int
+	VoteGranted bool
 }
 
 // example RequestVote RPC handler.
@@ -270,4 +270,18 @@ func Make(peers []*labrpc.ClientEnd, me int,
 }
 
 type Entry struct {
+}
+
+type AppendEntriesArgs struct {
+	Term              int
+	LeaderID          int
+	PrevLogIndex      int
+	PrevLogTerm       int
+	Entries           []Entry
+	LeaderCommitIndex int
+}
+
+type AppendEntriesReply struct {
+	Term    int
+	Success bool
 }
