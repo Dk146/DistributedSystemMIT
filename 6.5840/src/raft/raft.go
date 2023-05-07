@@ -177,20 +177,20 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	reply.VoteGranted = false
 	reply.Term = rf.currentTerm
 	fmt.Println("Request term: ", args.Term, "   current term: ", rf.currentTerm)
-	if args.Term < rf.currentTerm || rf.state == Follower {
+	if rf.currentTerm > args.Term {
 		reply.Term = rf.currentTerm
 		return
 	}
 	if (rf.votedFor == -1 || rf.votedFor == args.CandidatedId) && rf.currentTerm <= args.Term {
-		rf.currentTerm = args.Term
 		rf.votedFor = args.CandidatedId
 		rf.state = Follower
 		reply.VoteGranted = true
 	} else if rf.currentTerm < args.Term {
-		rf.currentTerm = args.Term
-		rf.votedFor = -1
+		rf.votedFor = args.CandidatedId
 		rf.state = Follower
+		reply.VoteGranted = true
 	}
+	rf.currentTerm = args.Term
 }
 
 // example code to send a RequestVote RPC to a server.
@@ -278,13 +278,16 @@ func (rf *Raft) ticker() {
 
 		count := 1
 		now := time.Now()
-		if now.Sub(rf.lastHeartBeat).Milliseconds() > ms+250 && rf.state != Leader {
+		rf.mu.Lock()
+		diffTime := now.Sub(rf.lastHeartBeat).Milliseconds()
+		rf.mu.Unlock()
+		if diffTime > ms+650 && rf.state != Leader {
 			fmt.Println(rf.me, " Start election")
 			rf.state = Candidate
 			rf.currentTerm++
 			rf.votedFor = rf.me
-			go func() {
-				for i := 0; i < len(rf.peers) && i != rf.me; i++ {
+			for i := 0; i < len(rf.peers) && i != rf.me; i++ {
+				go func(i int) {
 					args := RequestVoteArgs{Term: rf.currentTerm, CandidatedId: rf.me}
 					reply := RequestVoteReply{}
 					rf.sendRequestVote(i, &args, &reply)
@@ -292,20 +295,19 @@ func (rf *Raft) ticker() {
 						rf.currentTerm = reply.Term
 						rf.votedFor = -1
 						rf.state = Follower
-						break
 					}
-					if reply.VoteGranted {
+					if reply.VoteGranted && reply.Term <= rf.currentTerm {
 						count++
+						fmt.Println(rf.me, " Count: ", count)
 						if count >= len(rf.peers)/2+1 {
 							fmt.Println(rf.me, " Become Leader in term ", rf.currentTerm)
 							rf.state = Leader
 							return
 						}
-
 					}
-				}
-				rf.votedFor = -1
-			}()
+					// rf.votedFor = -1
+				}(i)
+			}
 		}
 	}
 }
@@ -316,14 +318,17 @@ func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *Ap
 }
 
 func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply) {
+	rf.mu.Lock()
 	rf.lastHeartBeat = time.Now()
+	rf.mu.Unlock()
+	reply.Term = rf.currentTerm
+	// fmt.Println(rf.lastHeartBeat)
 	if rf.currentTerm < args.Term {
 		rf.currentTerm = args.Term
-	}
-	if rf.state == Candidate {
+		rf.votedFor = -1
 		rf.state = Follower
 	}
-	// fmt.Println("receive hearbeat")
+	fmt.Println(rf.me, "term: ", rf.currentTerm, "receive hearbeat ", args.LeaderID, "  term: ", args.Term)
 	// TODO: implement
 }
 
