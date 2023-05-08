@@ -184,10 +184,16 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	if (rf.votedFor == -1 || rf.votedFor == args.CandidatedId) && rf.currentTerm <= args.Term {
 		rf.votedFor = args.CandidatedId
 		rf.state = Follower
+		rf.mu.Lock()
+		rf.lastHeartBeat = time.Now()
+		rf.mu.Unlock()
 		reply.VoteGranted = true
 	} else if rf.currentTerm < args.Term {
 		rf.votedFor = args.CandidatedId
 		rf.state = Follower
+		rf.mu.Lock()
+		rf.lastHeartBeat = time.Now()
+		rf.mu.Unlock()
 		reply.VoteGranted = true
 	}
 	rf.currentTerm = args.Term
@@ -290,7 +296,9 @@ func (rf *Raft) ticker() {
 				go func(i int) {
 					args := RequestVoteArgs{Term: rf.currentTerm, CandidatedId: rf.me}
 					reply := RequestVoteReply{}
-					rf.sendRequestVote(i, &args, &reply)
+					if ok := rf.sendRequestVote(i, &args, &reply); !ok {
+						return
+					}
 					if reply.Term > rf.currentTerm {
 						rf.currentTerm = reply.Term
 						rf.votedFor = -1
