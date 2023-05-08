@@ -96,13 +96,22 @@ func (rf *Raft) GetState() (int, bool) {
 	var term int
 	var isleader bool
 	// Your code here (2A).
-	rf.mu.Lock()
-	term = rf.currentTerm
 	isleader = false
+	term = rf.currentTerm
 	if rf.state == Leader {
-		isleader = true
+		now := time.Now()
+		diffTime := now.Sub(rf.lastHeartBeat).Milliseconds()
+		fmt.Println(now, rf.me, diffTime)
+		if diffTime < 800 {
+			isleader = true
+		} else {
+			rf.state = Follower
+		}
 	}
-	rf.mu.Unlock()
+
+	// if rf.state == Leader {
+	// 	isleader = true
+	// }
 	return term, isleader
 }
 
@@ -304,12 +313,14 @@ func (rf *Raft) ticker() {
 						rf.votedFor = -1
 						rf.state = Follower
 					}
-					if reply.VoteGranted && reply.Term <= rf.currentTerm {
+					if reply.VoteGranted && reply.Term <= rf.currentTerm && rf.state == Candidate {
 						count++
 						fmt.Println(rf.me, " Count: ", count)
 						if count >= len(rf.peers)/2+1 {
 							fmt.Println(rf.me, " Become Leader in term ", rf.currentTerm)
+							rf.lastHeartBeat = time.Now()
 							rf.state = Leader
+							go rf.PeriodHeartBeat()
 							return
 						}
 					}
@@ -342,7 +353,10 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 
 func (rf *Raft) PeriodHeartBeat() {
 	for rf.killed() == false {
+		// fmt.Println("PeriodHeartBeat server ID: ", rf.me)
 		if rf.state == Leader {
+			// fmt.Println("PeriodHeartBeat server leader ID: ", rf.me)
+			rf.lastHeartBeat = time.Now()
 			for i := 0; i < len(rf.peers) && i != rf.me; i++ {
 				args := AppendEntriesArgs{
 					Term:              rf.currentTerm,
@@ -360,6 +374,8 @@ func (rf *Raft) PeriodHeartBeat() {
 					rf.state = Follower
 				}
 			}
+		} else {
+			break
 		}
 		ms := 100
 		time.Sleep(time.Duration(ms) * time.Millisecond)
@@ -387,8 +403,6 @@ func Make(peers []*labrpc.ClientEnd, me int,
 	rf.currentTerm = 0
 	rf.votedFor = -1
 	rf.state = Follower
-
-	go rf.PeriodHeartBeat()
 
 	// initialize from state persisted before a crash
 	rf.readPersist(persister.ReadRaftState())
