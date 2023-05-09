@@ -189,6 +189,7 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	reply.VoteGranted = false
 	reply.Term = rf.currentTerm
 	// fmt.Println("Request term: ", args.Term, "   current term: ", rf.currentTerm)
+	Debug(dVote, "ID: %d - request term: %d - ID: %d - current term : %d", args.CandidatedId, args.Term, rf.me, rf.currentTerm)
 	if rf.currentTerm > args.Term {
 		reply.Term = rf.currentTerm
 		rf.mu.Unlock()
@@ -197,16 +198,12 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	if (rf.votedFor == -1 || rf.votedFor == args.CandidatedId) && rf.currentTerm <= args.Term {
 		rf.votedFor = args.CandidatedId
 		rf.state = Follower
-		// rf.mu.Lock()
 		rf.lastHeartBeat = time.Now()
-		// rf.mu.Unlock()
 		reply.VoteGranted = true
 	} else if rf.currentTerm < args.Term {
 		rf.votedFor = args.CandidatedId
 		rf.state = Follower
-		// rf.mu.Lock()
 		rf.lastHeartBeat = time.Now()
-		// rf.mu.Unlock()
 		reply.VoteGranted = true
 	}
 	rf.currentTerm = args.Term
@@ -299,11 +296,10 @@ func (rf *Raft) ticker() {
 		count := 1
 		now := time.Now()
 		rf.mu.Lock()
-		// rf.mu.Lock()
 		diffTime := now.Sub(rf.lastHeartBeat).Milliseconds()
-		// rf.mu.Unlock()
 		if diffTime > ms+650 && rf.state != Leader {
-			fmt.Println(rf.me, " Start election")
+			// fmt.Println(rf.me, " Start election")
+			Debug(dElection, "ID: %d Start election", rf.me)
 			rf.state = Candidate
 			rf.currentTerm++
 			rf.votedFor = rf.me
@@ -326,9 +322,10 @@ func (rf *Raft) ticker() {
 					if reply.VoteGranted && reply.Term <= currentTerm && state == Candidate {
 						rf.mu.Lock()
 						count++
-						fmt.Println(me, " Count: ", count)
+						// fmt.Println(me, " Count: ", count)
 						if count >= peerLen/2+1 {
-							fmt.Println(rf.me, " Become Leader in term ", rf.currentTerm)
+							// fmt.Println(rf.me, " Become Leader in term ", rf.currentTerm)
+							Debug(dElection, "ID: %d Become Leader in term %d", rf.me, rf.currentTerm)
 							rf.lastHeartBeat = time.Now()
 							rf.state = Leader
 							rf.mu.Unlock()
@@ -362,7 +359,8 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		rf.votedFor = -1
 		rf.state = Follower
 	}
-	fmt.Println(rf.me, "term: ", rf.currentTerm, "receive hearbeat ", args.LeaderID, "  term: ", args.Term)
+	// fmt.Println(rf.me, "term: ", rf.currentTerm, "receive hearbeat ", args.LeaderID, "  term: ", args.Term)
+	Debug(dInfo, "ID: %d term %d - receive heartbeat from - ID: %d term %d", rf.me, rf.currentTerm, args.LeaderID, args.Term)
 	rf.mu.Unlock()
 	// TODO: implement
 }
