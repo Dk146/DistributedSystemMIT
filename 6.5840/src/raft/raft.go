@@ -188,7 +188,6 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	rf.mu.Lock()
 	reply.VoteGranted = false
 	reply.Term = rf.currentTerm
-	// fmt.Println("Request term: ", args.Term, "   current term: ", rf.currentTerm)
 	Debug(dVote, "ID: %d - request term: %d - ID: %d - current term : %d", args.CandidatedId, args.Term, rf.me, rf.currentTerm)
 	if rf.currentTerm > args.Term {
 		reply.Term = rf.currentTerm
@@ -284,7 +283,7 @@ func (rf *Raft) killed() bool {
 }
 
 func (rf *Raft) ticker() {
-	for rf.killed() == false {
+	for !rf.killed() {
 		// Your code here (2A)
 		// Check if a leader election should be started.
 
@@ -353,13 +352,11 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	rf.mu.Lock()
 	rf.lastHeartBeat = time.Now()
 	reply.Term = rf.currentTerm
-	// fmt.Println(rf.lastHeartBeat)
 	if rf.currentTerm < args.Term {
 		rf.currentTerm = args.Term
 		rf.votedFor = -1
 		rf.state = Follower
 	}
-	// fmt.Println(rf.me, "term: ", rf.currentTerm, "receive hearbeat ", args.LeaderID, "  term: ", args.Term)
 	Debug(dInfo, "ID: %d term %d - receive heartbeat from - ID: %d term %d", rf.me, rf.currentTerm, args.LeaderID, args.Term)
 	rf.mu.Unlock()
 	// TODO: implement
@@ -367,7 +364,6 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 
 func (rf *Raft) PeriodHeartBeat() {
 	for rf.killed() == false {
-		// fmt.Println("PeriodHeartBeat server ID: ", rf.me)
 		rf.mu.Lock()
 		if rf.state == Leader {
 			// fmt.Println("PeriodHeartBeat server leader ID: ", rf.me)
