@@ -276,7 +276,6 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	for i := 0; i < nPeers; i++ {
 		if i != me {
 			go func(i int) {
-				fmt.Println("send to ", i)
 				prelogTerm := 1
 				rf.mu.Lock()
 				if len(rf.log) != 0 {
@@ -293,11 +292,9 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 				reply := AppendEntriesReply{Success: false}
 				rf.mu.Unlock()
 				for !reply.Success {
-					fmt.Println("COOOCOCOC")
 					rf.sendAppendEntries(i, &args, &reply)
 					if reply.Success {
 						rf.mu.Lock()
-						fmt.Println("Successssss")
 						rf.nextIndex[i]++
 						rf.matchIndex[i]++
 						// fmt.Println("rf.nextIndex[i]  ", rf.nextIndex[i])
@@ -372,7 +369,6 @@ func (rf *Raft) ticker() {
 			rf.mu.Unlock()
 			for i := 0; i < len(rf.peers); i++ {
 				if i != rf.me {
-
 					rf.mu.Lock()
 					go func(i, me, currentTerm, peerLen int, state State) {
 						args := RequestVoteArgs{Term: currentTerm, CandidatedId: me}
@@ -440,13 +436,12 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 
 	// 4
 	if len(args.Entries) > 0 {
-		fmt.Println(rf.log, args.PrevLogIndex)
+		// fmt.Println(rf.log, args.PrevLogIndex)
 		if len(rf.log) < args.PrevLogIndex {
-			// rf.log = append(rf.log, args.Entries...)
-			for i := 0; i < len(args.Entries); i++ {
-				rf.log = append(rf.log, EntryLog{Command: args.Entries[i].Command, Term: args.Entries[i].Term})
-				fmt.Println(rf.me, "logs: ", rf.log)
-			}
+			rf.log = append(rf.log, args.Entries...)
+			// for i := 0; i < len(args.Entries); i++ {
+			// 	rf.log = append(rf.log, EntryLog{Command: args.Entries[i].Command, Term: args.Entries[i].Term})
+			// }
 		}
 	}
 
@@ -455,7 +450,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		resCommitIndex := int(math.Min(float64(args.LeaderCommitIndex), float64(len(rf.log))))
 		for i := rf.commitIndex + 1; i <= resCommitIndex; i++ {
 			rf.applyCh <- ApplyMsg{CommandValid: true, Command: rf.log[i-1].Command, CommandIndex: i}
-			fmt.Println(rf.log[i-1].Command, i)
+			// fmt.Println(rf.log[i-1].Command, i)
 		}
 		rf.commitIndex = resCommitIndex
 		fmt.Println("COMMIT INDEX", rf.commitIndex)
