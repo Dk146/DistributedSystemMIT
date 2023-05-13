@@ -274,43 +274,80 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	rf.mu.Unlock()
 	for i := 0; i < nPeers; i++ {
 		if i != me {
-			go func(i int) {
-				prelogTerm := 1
-				rf.mu.Lock()
-				if len(rf.log) != 0 {
-					prelogTerm = rf.log[len(rf.log)-1].Term
-				}
-				args := AppendEntriesArgs{
-					Term:              rf.currentTerm,
-					LeaderID:          rf.me,
-					PrevLogIndex:      rf.nextIndex[i],
-					PrevLogTerm:       prelogTerm,
-					Entries:           []EntryLog{{command, rf.currentTerm}},
-					LeaderCommitIndex: rf.commitIndex,
-				}
-				reply := AppendEntriesReply{Success: false}
-				rf.mu.Unlock()
-				for !reply.Success {
-					rf.sendAppendEntries(i, &args, &reply)
-					if reply.Success {
-						rf.mu.Lock()
-						rf.nextIndex[i]++
-						rf.matchIndex[i]++
-						// fmt.Println("rf.nextIndex[i]  ", rf.nextIndex[i])
-						if rf.CheckMajorityOnIndex(args.PrevLogIndex) {
-							commitIdx := int(math.Max(float64(rf.commitIndex), float64(rf.nextIndex[i])-1))
-							if commitIdx > rf.commitIndex {
-								rf.commitIndex = int(math.Max(float64(rf.commitIndex), float64(rf.nextIndex[i])-1))
-								rf.applyCh <- ApplyMsg{CommandValid: true, Command: rf.log[index-1].Command, CommandIndex: index}
-							}
-						}
-						rf.mu.Unlock()
-					}
-				}
-			}(i)
+			// go func(i int) {
+			// 	prelogTerm := 1
+			// 	rf.mu.Lock()
+			// 	if len(rf.log) != 0 {
+			// 		prelogTerm = rf.log[len(rf.log)-1].Term
+			// 	}
+			// 	args := AppendEntriesArgs{
+			// 		Term:              rf.currentTerm,
+			// 		LeaderID:          rf.me,
+			// 		PrevLogIndex:      rf.nextIndex[i],
+			// 		PrevLogTerm:       prelogTerm,
+			// 		Entries:           []EntryLog{{command, rf.currentTerm}},
+			// 		LeaderCommitIndex: rf.commitIndex,
+			// 	}
+			// 	reply := AppendEntriesReply{Success: false}
+			// 	rf.mu.Unlock()
+			// 	for !reply.Success {
+			// 		rf.sendAppendEntries(i, &args, &reply)
+			// 		if reply.Success {
+			// 			rf.mu.Lock()
+			// 			rf.nextIndex[i]++
+			// 			rf.matchIndex[i]++
+			// 			if rf.CheckMajorityOnIndex(args.PrevLogIndex) {
+			// 				commitIdx := int(math.Max(float64(rf.commitIndex), float64(rf.nextIndex[i])-1))
+			// 				if commitIdx > rf.commitIndex {
+			// 					rf.commitIndex = int(math.Max(float64(rf.commitIndex), float64(rf.nextIndex[i])-1))
+			// 					rf.applyCh <- ApplyMsg{CommandValid: true, Command: rf.log[index-1].Command, CommandIndex: index}
+			// 				}
+			// 			}
+			// 			rf.mu.Unlock()
+			// 		}
+			// 	}
+			// }(i)
+			go rf.AppendLogToFollower(command, i, index)
 		}
 	}
 	return index, term, isLeader
+}
+
+func (rf *Raft) AppendLogToFollower(command interface{}, i, index int) {
+	prelogTerm := 1
+	rf.mu.Lock()
+	if len(rf.log) != 0 {
+		prelogTerm = rf.log[len(rf.log)-1].Term
+	}
+	args := AppendEntriesArgs{
+		Term:              rf.currentTerm,
+		LeaderID:          rf.me,
+		PrevLogIndex:      rf.nextIndex[i],
+		PrevLogTerm:       prelogTerm,
+		Entries:           []EntryLog{{command, rf.currentTerm}},
+		LeaderCommitIndex: rf.commitIndex,
+	}
+	reply := AppendEntriesReply{Success: false}
+	rf.mu.Unlock()
+	// for !reply.Success {
+	rf.sendAppendEntries(i, &args, &reply)
+	if reply.Success {
+		rf.mu.Lock()
+		rf.nextIndex[i]++
+		rf.matchIndex[i]++
+		if rf.CheckMajorityOnIndex(args.PrevLogIndex) {
+			commitIdx := int(math.Max(float64(rf.commitIndex), float64(rf.nextIndex[i])-1))
+			if commitIdx > rf.commitIndex {
+				rf.commitIndex = int(math.Max(float64(rf.commitIndex), float64(rf.nextIndex[i])-1))
+				rf.applyCh <- ApplyMsg{CommandValid: true, Command: rf.log[index-1].Command, CommandIndex: index}
+			}
+		}
+		rf.mu.Unlock()
+		time.Sleep(10 * time.Millisecond)
+		// break
+	}
+	rf.mu.Unlock()
+	// }
 }
 
 func (rf *Raft) CheckMajorityOnIndex(index int) bool {
@@ -326,8 +363,9 @@ func (rf *Raft) CheckMajorityOnIndex(index int) bool {
 
 func (rf *Raft) LeaderInit() {
 	for i := 0; i < len(rf.peers); i++ {
-		rf.nextIndex[i] = rf.nextIndex[rf.me]
+		rf.nextIndex[i] = len(rf.log) + 1
 	}
+	fmt.Println(rf.nextIndex)
 }
 
 // the tester doesn't halt goroutines created by Raft after each test,
@@ -393,6 +431,7 @@ func (rf *Raft) ticker() {
 								fmt.Println("ID: ", rf.me, " Become Leader in term ", rf.currentTerm)
 								rf.lastHeartBeat = time.Now()
 								rf.state = Leader
+								rf.LeaderInit()
 								rf.mu.Unlock()
 								go rf.PeriodHeartBeat()
 								return
