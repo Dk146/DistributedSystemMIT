@@ -269,7 +269,6 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	index = rf.nextIndex[rf.me]
 	rf.log = append(rf.log, EntryLog{Command: command, Term: rf.currentTerm})
 	rf.nextIndex[rf.me]++
-	rf.applyCh <- ApplyMsg{CommandValid: true, Command: rf.log[index-1].Command, CommandIndex: index}
 	nPeers := len(rf.peers)
 	me := rf.me
 	rf.mu.Unlock()
@@ -299,7 +298,11 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 						rf.matchIndex[i]++
 						// fmt.Println("rf.nextIndex[i]  ", rf.nextIndex[i])
 						if rf.CheckMajorityOnIndex(args.PrevLogIndex) {
-							rf.commitIndex = int(math.Max(float64(rf.commitIndex), float64(rf.nextIndex[i])-1))
+							commitIdx := int(math.Max(float64(rf.commitIndex), float64(rf.nextIndex[i])-1))
+							if commitIdx > rf.commitIndex {
+								rf.commitIndex = int(math.Max(float64(rf.commitIndex), float64(rf.nextIndex[i])-1))
+								rf.applyCh <- ApplyMsg{CommandValid: true, Command: rf.log[index-1].Command, CommandIndex: index}
+							}
 						}
 						rf.mu.Unlock()
 					}
@@ -316,7 +319,6 @@ func (rf *Raft) CheckMajorityOnIndex(index int) bool {
 		fmt.Println(rf.nextIndex, index)
 		if rf.nextIndex[i]-1 >= index {
 			count++
-			fmt.Println("COUNT:    ", count)
 		}
 	}
 	return count >= len(rf.peers)/2+1
@@ -468,32 +470,33 @@ func (rf *Raft) PeriodHeartBeat() {
 			rf.mu.Unlock()
 			for i := 0; i < len(rf.peers); i++ {
 				if i != rf.me {
-
-					rf.mu.Lock()
-					prevLogIndex := rf.nextIndex[rf.me] - 1
-					prevLogTerm := -1
-					if len(rf.log) > 0 {
-						prevLogTerm = rf.log[len(rf.log)-1].Term
-					}
-					args := AppendEntriesArgs{
-						Term:              rf.currentTerm,
-						LeaderID:          rf.me,
-						PrevLogIndex:      prevLogIndex,
-						PrevLogTerm:       prevLogTerm,
-						Entries:           []EntryLog{},
-						LeaderCommitIndex: rf.commitIndex,
-					}
-					// fmt.Println(rf.commitIndex)
-					reply := AppendEntriesReply{}
-					rf.mu.Unlock()
-					rf.sendAppendEntries(i, &args, &reply)
-					rf.mu.Lock()
-					if reply.Term > rf.currentTerm {
-						rf.currentTerm = reply.Term
-						rf.votedFor = -1
-						rf.state = Follower
-					}
-					rf.mu.Unlock()
+					go func(i int) {
+						rf.mu.Lock()
+						prevLogIndex := rf.nextIndex[rf.me] - 1
+						prevLogTerm := -1
+						if len(rf.log) > 0 {
+							prevLogTerm = rf.log[len(rf.log)-1].Term
+						}
+						args := AppendEntriesArgs{
+							Term:              rf.currentTerm,
+							LeaderID:          rf.me,
+							PrevLogIndex:      prevLogIndex,
+							PrevLogTerm:       prevLogTerm,
+							Entries:           []EntryLog{},
+							LeaderCommitIndex: rf.commitIndex,
+						}
+						// fmt.Println(rf.commitIndex)
+						reply := AppendEntriesReply{}
+						rf.mu.Unlock()
+						rf.sendAppendEntries(i, &args, &reply)
+						rf.mu.Lock()
+						if reply.Term > rf.currentTerm {
+							rf.currentTerm = reply.Term
+							rf.votedFor = -1
+							rf.state = Follower
+						}
+						rf.mu.Unlock()
+					}(i)
 				}
 			}
 		} else {
