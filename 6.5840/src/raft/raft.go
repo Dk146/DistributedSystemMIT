@@ -31,6 +31,8 @@ import (
 	"6.5840/labrpc"
 )
 
+var wg sync.WaitGroup
+
 type State int64
 
 const (
@@ -191,18 +193,25 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	reply.VoteGranted = false
 	reply.Term = rf.currentTerm
 	Debug(dVote, "ID: %d - request term: %d - ID: %d - current term : %d", args.CandidatedId, args.Term, rf.me, rf.currentTerm)
-	if rf.currentTerm > args.Term {
+	if rf.currentTerm > args.Term || rf.commitIndex > args.LastLogIndex {
+		// fmt.Println(rf.commitIndex, args.LastLogIndex)
 		reply.Term = rf.currentTerm
 		rf.mu.Unlock()
 		return
 	}
 	if (rf.votedFor == -1 || rf.votedFor == args.CandidatedId) && rf.currentTerm <= args.Term {
 		rf.votedFor = args.CandidatedId
+		if rf.state == Leader {
+			fmt.Println("Convert to follower>>>>>>>>>>>>>>>>1")
+		}
 		rf.state = Follower
 		rf.lastHeartBeat = time.Now()
 		reply.VoteGranted = true
 	} else if rf.currentTerm < args.Term {
 		rf.votedFor = args.CandidatedId
+		if rf.state == Leader {
+			fmt.Println("Convert to follower>>>>>>>>>>>>>>>>2")
+		}
 		rf.state = Follower
 		rf.lastHeartBeat = time.Now()
 		reply.VoteGranted = true
@@ -266,6 +275,7 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 		return -1, -1, false
 	}
 	rf.mu.Lock()
+	fmt.Println("Start", command)
 	index = rf.nextIndex[rf.me]
 	rf.log = append(rf.log, EntryLog{Command: command, Term: rf.currentTerm})
 	rf.nextIndex[rf.me]++
@@ -274,39 +284,6 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	rf.mu.Unlock()
 	for i := 0; i < nPeers; i++ {
 		if i != me {
-			// go func(i int) {
-			// 	prelogTerm := 1
-			// 	rf.mu.Lock()
-			// 	if len(rf.log) != 0 {
-			// 		prelogTerm = rf.log[len(rf.log)-1].Term
-			// 	}
-			// 	args := AppendEntriesArgs{
-			// 		Term:              rf.currentTerm,
-			// 		LeaderID:          rf.me,
-			// 		PrevLogIndex:      rf.nextIndex[i],
-			// 		PrevLogTerm:       prelogTerm,
-			// 		Entries:           []EntryLog{{command, rf.currentTerm}},
-			// 		LeaderCommitIndex: rf.commitIndex,
-			// 	}
-			// 	reply := AppendEntriesReply{Success: false}
-			// 	rf.mu.Unlock()
-			// 	for !reply.Success {
-			// 		rf.sendAppendEntries(i, &args, &reply)
-			// 		if reply.Success {
-			// 			rf.mu.Lock()
-			// 			rf.nextIndex[i]++
-			// 			rf.matchIndex[i]++
-			// 			if rf.CheckMajorityOnIndex(args.PrevLogIndex) {
-			// 				commitIdx := int(math.Max(float64(rf.commitIndex), float64(rf.nextIndex[i])-1))
-			// 				if commitIdx > rf.commitIndex {
-			// 					rf.commitIndex = int(math.Max(float64(rf.commitIndex), float64(rf.nextIndex[i])-1))
-			// 					rf.applyCh <- ApplyMsg{CommandValid: true, Command: rf.log[index-1].Command, CommandIndex: index}
-			// 				}
-			// 			}
-			// 			rf.mu.Unlock()
-			// 		}
-			// 	}
-			// }(i)
 			go rf.AppendLogToFollower(command, i, index)
 		}
 	}
@@ -329,8 +306,11 @@ func (rf *Raft) AppendLogToFollower(command interface{}, i, index int) {
 	}
 	reply := AppendEntriesReply{Success: false}
 	rf.mu.Unlock()
-	// for !reply.Success {
-	rf.sendAppendEntries(i, &args, &reply)
+	if rf.nextIndex[i] == index {
+		rf.sendAppendEntries(i, &args, &reply)
+	} else {
+		return
+	}
 	if reply.Success {
 		rf.mu.Lock()
 		rf.nextIndex[i]++
@@ -343,17 +323,68 @@ func (rf *Raft) AppendLogToFollower(command interface{}, i, index int) {
 			}
 		}
 		rf.mu.Unlock()
-		time.Sleep(10 * time.Millisecond)
-		// break
+	} else {
+		fmt.Println("OnReplyAppendEntriesFail")
+		rf.OnReplyAppendEntriesFail(i)
 	}
+}
+
+func (rf *Raft) OnReplyAppendEntriesFail(i int) {
+	prelogTerm := 1
+	rf.mu.Lock()
+	if len(rf.log) != 0 {
+		prelogTerm = rf.log[len(rf.log)-1].Term
+	}
+
+	args := AppendEntriesArgs{
+		Term:              rf.currentTerm,
+		LeaderID:          rf.me,
+		PrevLogIndex:      rf.nextIndex[i],
+		PrevLogTerm:       prelogTerm,
+		Entries:           []EntryLog{rf.log[rf.nextIndex[i]-2]},
+		LeaderCommitIndex: rf.commitIndex,
+	}
+	reply := AppendEntriesReply{Success: false}
 	rf.mu.Unlock()
-	// }
+	for !reply.Success && rf.nextIndex[i] != rf.nextIndex[rf.me] {
+		isSent := rf.sendAppendEntries(i, &args, &reply)
+		rf.mu.Lock()
+		if isSent {
+			if reply.Success {
+				rf.nextIndex[i]++
+				if rf.nextIndex[i] >= rf.nextIndex[rf.me] {
+					rf.mu.Unlock()
+					fmt.Println("Break")
+					break
+				}
+			} else {
+				if reply.Term > rf.currentTerm {
+					rf.mu.Unlock()
+					fmt.Println("Break")
+					break
+				}
+				rf.nextIndex[i]--
+				// fmt.Println("NEXT INDEX ", rf.nextIndex[i])
+				time.Sleep(100 * time.Millisecond)
+			}
+			args = AppendEntriesArgs{
+				Term:              rf.currentTerm,
+				LeaderID:          rf.me,
+				PrevLogIndex:      rf.nextIndex[i],
+				PrevLogTerm:       prelogTerm,
+				Entries:           []EntryLog{rf.log[rf.nextIndex[i]-1]},
+				LeaderCommitIndex: rf.commitIndex,
+			}
+			reply = AppendEntriesReply{Success: false}
+		}
+		rf.mu.Unlock()
+	}
 }
 
 func (rf *Raft) CheckMajorityOnIndex(index int) bool {
 	count := 0
 	for i := 0; i < len(rf.peers); i++ {
-		fmt.Println(rf.nextIndex, index)
+		// fmt.Println(rf.nextIndex, index)
 		if rf.nextIndex[i]-1 >= index {
 			count++
 		}
@@ -405,13 +436,24 @@ func (rf *Raft) ticker() {
 			Debug(dElection, "ID: %d Start election", rf.me)
 			rf.state = Candidate
 			rf.currentTerm++
+			fmt.Println("ID:", rf.me, " Start election", rf.currentTerm)
 			rf.votedFor = rf.me
 			rf.mu.Unlock()
 			for i := 0; i < len(rf.peers); i++ {
 				if i != rf.me {
 					rf.mu.Lock()
 					go func(i, me, currentTerm, peerLen int, state State) {
-						args := RequestVoteArgs{Term: currentTerm, CandidatedId: me}
+						lastLogIndex := len(rf.log)
+						lastLogTerm := 0
+						if len(rf.log) > 1 {
+							lastLogTerm = rf.log[len(rf.log)-1].Term
+						}
+						args := RequestVoteArgs{
+							Term:         currentTerm,
+							CandidatedId: me,
+							LastLogIndex: lastLogIndex,
+							LastLogTerm:  lastLogTerm,
+						}
 						reply := RequestVoteReply{}
 						if ok := rf.sendRequestVote(i, &args, &reply); !ok {
 							return
@@ -438,7 +480,6 @@ func (rf *Raft) ticker() {
 							}
 							rf.mu.Unlock()
 						}
-						// rf.votedFor = -1
 					}(i, rf.me, rf.currentTerm, len(rf.peers), rf.state)
 					rf.mu.Unlock()
 				}
@@ -463,6 +504,11 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		rf.votedFor = -1
 		rf.state = Follower
 	}
+
+	if rf.currentTerm > args.Term {
+		reply.Success = false
+		reply.Term = rf.currentTerm
+	}
 	Debug(dInfo, "ID: %d term %d - receive heartbeat from - ID: %d term %d", rf.me, rf.currentTerm, args.LeaderID, args.Term)
 
 	// 2
@@ -480,9 +526,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		// fmt.Println(rf.log, args.PrevLogIndex)
 		if len(rf.log) < args.PrevLogIndex {
 			rf.log = append(rf.log, args.Entries...)
-			// for i := 0; i < len(args.Entries); i++ {
-			// 	rf.log = append(rf.log, EntryLog{Command: args.Entries[i].Command, Term: args.Entries[i].Term})
-			// }
+			fmt.Println("ID ", rf.me, rf.log)
 		}
 	}
 
@@ -490,11 +534,12 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	if args.LeaderCommitIndex > rf.commitIndex {
 		resCommitIndex := int(math.Min(float64(args.LeaderCommitIndex), float64(len(rf.log))))
 		for i := rf.commitIndex + 1; i <= resCommitIndex; i++ {
+			// fmt.Println("COMMITCOMMAND", i, rf.me, "CHECK", i, rf.log[i-1].Command)
 			rf.applyCh <- ApplyMsg{CommandValid: true, Command: rf.log[i-1].Command, CommandIndex: i}
 			// fmt.Println(rf.log[i-1].Command, i)
 		}
 		rf.commitIndex = resCommitIndex
-		fmt.Println("COMMIT INDEX", rf.commitIndex)
+		// fmt.Println("COMMIT INDEX", rf.commitIndex)
 	}
 	reply.Success = true
 	rf.mu.Unlock()
@@ -504,7 +549,6 @@ func (rf *Raft) PeriodHeartBeat() {
 	for rf.killed() == false {
 		rf.mu.Lock()
 		if rf.state == Leader {
-			// fmt.Println("PeriodHeartBeat server leader ID: ", rf.me)
 			rf.lastHeartBeat = time.Now()
 			rf.mu.Unlock()
 			for i := 0; i < len(rf.peers); i++ {
@@ -532,6 +576,9 @@ func (rf *Raft) PeriodHeartBeat() {
 						if reply.Term > rf.currentTerm {
 							rf.currentTerm = reply.Term
 							rf.votedFor = -1
+							if rf.state == Leader {
+								fmt.Println("Convert to follower>>>>>>>>>>>>>>>>5")
+							}
 							rf.state = Follower
 						}
 						rf.mu.Unlock()
