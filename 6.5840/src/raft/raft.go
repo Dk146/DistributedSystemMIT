@@ -78,6 +78,7 @@ type Raft struct {
 
 	state         State
 	lastHeartBeat time.Time
+	nextTimer     int
 
 	// Volatile state on all servers
 	commitIndex int
@@ -197,12 +198,12 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	if (rf.votedFor == -1 || rf.votedFor == args.CandidatedId) && rf.currentTerm <= args.Term {
 		rf.votedFor = args.CandidatedId
 		rf.state = Follower
-		rf.lastHeartBeat = time.Now()
+		rf.resetTimer()
 		reply.VoteGranted = true
 	} else if rf.currentTerm < args.Term {
 		rf.votedFor = args.CandidatedId
 		rf.state = Follower
-		rf.lastHeartBeat = time.Now()
+		rf.resetTimer()
 		reply.VoteGranted = true
 	}
 	rf.currentTerm = args.Term
@@ -289,21 +290,24 @@ func (rf *Raft) ticker() {
 
 		// pause for a random amount of time between 50 and 350
 		// milliseconds.
-		ms := 50 + (rand.Int63() % 300)
-		time.Sleep(time.Duration(ms) * time.Millisecond)
+
+		time.Sleep(100 * time.Millisecond)
 
 		count := 1
 		now := time.Now()
 		rf.mu.Lock()
 		diffTime := now.Sub(rf.lastHeartBeat).Milliseconds()
-		if diffTime > ms+650 && rf.state != Leader {
-			// fmt.Println(rf.me, " Start election")
+		if diffTime > int64(rf.nextTimer) && rf.state != Leader {
+			fmt.Println(rf.me, " Start election", rf.currentTerm)
 			Debug(dElection, "ID: %d Start election", rf.me)
 			rf.state = Candidate
 			rf.currentTerm++
 			rf.votedFor = rf.me
 			rf.mu.Unlock()
-			for i := 0; i < len(rf.peers) && i != rf.me; i++ {
+			for i := 0; i < len(rf.peers); i++ {
+				if i == rf.me {
+					continue
+				}
 				rf.mu.Lock()
 				go func(i, me, currentTerm, peerLen int, state State) {
 					args := RequestVoteArgs{Term: currentTerm, CandidatedId: me}
@@ -325,7 +329,7 @@ func (rf *Raft) ticker() {
 						if count >= peerLen/2+1 {
 							// fmt.Println(rf.me, " Become Leader in term ", rf.currentTerm)
 							Debug(dElection, "ID: %d Become Leader in term %d", rf.me, rf.currentTerm)
-							rf.lastHeartBeat = time.Now()
+							rf.resetTimer()
 							rf.state = Leader
 							rf.mu.Unlock()
 							go rf.PeriodHeartBeat()
@@ -350,7 +354,7 @@ func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *Ap
 
 func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply) {
 	rf.mu.Lock()
-	rf.lastHeartBeat = time.Now()
+	rf.resetTimer()
 	reply.Term = rf.currentTerm
 	if rf.currentTerm < args.Term {
 		rf.currentTerm = args.Term
@@ -367,29 +371,34 @@ func (rf *Raft) PeriodHeartBeat() {
 		rf.mu.Lock()
 		if rf.state == Leader {
 			// fmt.Println("PeriodHeartBeat server leader ID: ", rf.me)
-			rf.lastHeartBeat = time.Now()
+			rf.resetTimer()
 			rf.mu.Unlock()
-			for i := 0; i < len(rf.peers) && i != rf.me; i++ {
-				rf.mu.Lock()
-				args := AppendEntriesArgs{
-					Term:              rf.currentTerm,
-					LeaderID:          rf.me,
-					PrevLogIndex:      -1,
-					PrevLogTerm:       -1,
-					Entries:           []Entry{},
-					LeaderCommitIndex: -1,
+			go func() {
+				for i := 0; i < len(rf.peers); i++ {
+					if i == rf.me {
+						continue
+					}
+					rf.mu.Lock()
+					args := AppendEntriesArgs{
+						Term:              rf.currentTerm,
+						LeaderID:          rf.me,
+						PrevLogIndex:      -1,
+						PrevLogTerm:       -1,
+						Entries:           []Entry{},
+						LeaderCommitIndex: -1,
+					}
+					reply := AppendEntriesReply{}
+					rf.mu.Unlock()
+					rf.sendAppendEntries(i, &args, &reply)
+					rf.mu.Lock()
+					if reply.Term > rf.currentTerm {
+						rf.currentTerm = reply.Term
+						rf.votedFor = -1
+						rf.state = Follower
+					}
+					rf.mu.Unlock()
 				}
-				reply := AppendEntriesReply{}
-				rf.mu.Unlock()
-				rf.sendAppendEntries(i, &args, &reply)
-				rf.mu.Lock()
-				if reply.Term > rf.currentTerm {
-					rf.currentTerm = reply.Term
-					rf.votedFor = -1
-					rf.state = Follower
-				}
-				rf.mu.Unlock()
-			}
+			}()
 		} else {
 			rf.mu.Unlock()
 			break
@@ -397,6 +406,11 @@ func (rf *Raft) PeriodHeartBeat() {
 		ms := 100
 		time.Sleep(time.Duration(ms) * time.Millisecond)
 	}
+}
+
+func (rf *Raft) resetTimer() {
+	rf.lastHeartBeat = time.Now()
+	rf.nextTimer = 550 + (rand.Int() % 400)
 }
 
 // the service or tester wants to create a Raft server. the ports
@@ -416,7 +430,7 @@ func Make(peers []*labrpc.ClientEnd, me int,
 	rf.me = me
 
 	// Your initialization code here (2A, 2B, 2C).
-	rf.lastHeartBeat = time.Now()
+	rf.resetTimer()
 	rf.currentTerm = 0
 	rf.votedFor = -1
 	rf.state = Follower
