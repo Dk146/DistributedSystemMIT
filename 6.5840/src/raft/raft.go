@@ -20,6 +20,7 @@ package raft
 import (
 	//	"bytes"
 
+	"bytes"
 	"math"
 	"math/rand"
 	"sync"
@@ -27,6 +28,7 @@ import (
 	"time"
 
 	//	"6.5840/labgob"
+	"6.5840/labgob"
 	"6.5840/labrpc"
 )
 
@@ -154,6 +156,15 @@ func (rf *Raft) persist() {
 	// e.Encode(rf.yyy)
 	// raftstate := w.Bytes()
 	// rf.persister.Save(raftstate, nil)
+
+	w := new(bytes.Buffer)
+	e := labgob.NewEncoder(w)
+	e.Encode(rf.currentTerm)
+	e.Encode(rf.votedFor)
+	e.Encode(rf.log)
+	raftstate := w.Bytes()
+	rf.persister.Save(raftstate, nil)
+	// fmt.Println(raftstate)
 }
 
 // restore previously persisted state.
@@ -174,6 +185,12 @@ func (rf *Raft) readPersist(data []byte) {
 	//   rf.xxx = xxx
 	//   rf.yyy = yyy
 	// }
+
+	r := bytes.NewBuffer(data)
+	d := labgob.NewDecoder(r)
+	d.Decode(&rf.currentTerm)
+	d.Decode(&rf.votedFor)
+	d.Decode(&rf.log)
 }
 
 // the service says it has created a snapshot that has
@@ -291,6 +308,7 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 		index = len(rf.log)
 		rf.nextIndex[rf.me]++
 		// fmt.Println("Append")
+		defer rf.persist()
 		rf.mu.Unlock()
 	}
 	return index, term, isLeader
@@ -393,6 +411,7 @@ func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *Ap
 func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
+	defer rf.persist()
 
 	// fmt.Println(args.LeaderCommitIndex, rf.commitIndex)
 	reply.Term = rf.currentTerm
