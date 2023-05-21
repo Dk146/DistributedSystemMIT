@@ -232,14 +232,22 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	if rf.currentTerm > args.Term {
 		return
 	}
-	if rf.currentTerm < args.Term {
-		rf.currentTerm = args.Term
-		rf.state = Follower
-		rf.votedFor = -1
-		// rf.resetTimer()
+
+	switch {
+	case rf.currentTerm < args.Term:
+		rf.stepDown(args.Term)
+	case rf.currentTerm == args.Term:
+	case rf.currentTerm > args.Term:
 	}
-	if rf.votedFor == -1 || rf.votedFor == args.CandidatedId || rf.currentTerm < args.Term {
-		selfLogMoreUpdate := rf.getLastLogIndex() > 0 && (rf.getLogEntryAtIndex(rf.getLastLogIndex()).Term > args.LastLogTerm || (rf.getLogEntryAtIndex(rf.getLastLogIndex()).Term == args.LastLogTerm && len(rf.log) > args.LastLogIndex))
+
+	switch {
+	case rf.currentTerm > args.Term:
+		reply.VoteGranted = false
+	case rf.votedFor == -1 || rf.votedFor == args.CandidatedId:
+		// selfLogMoreUpdate := rf.getLastLogIndex() > 0 &&
+		// 	(rf.getLogEntryAtIndex(rf.getLastLogIndex()).Term > args.LastLogTerm ||
+		// 		(rf.getLogEntryAtIndex(rf.getLastLogIndex()).Term == args.LastLogTerm && len(rf.log) > args.LastLogIndex))
+		selfLogMoreUpdate := rf.isSelfMoreUpToDate(args.LastLogIndex, args.LastLogTerm)
 		if !selfLogMoreUpdate {
 			rf.votedFor = args.CandidatedId
 			rf.state = Follower
@@ -247,7 +255,6 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 			reply.VoteGranted = true
 		}
 	}
-	rf.currentTerm = args.Term
 }
 
 // example code to send a RequestVote RPC to a server.
@@ -307,7 +314,6 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 		rf.log = append(rf.log, LogEntry{Term: term, Command: command})
 		index = len(rf.log)
 		rf.nextIndex[rf.me]++
-		// fmt.Println("Append")
 		defer rf.persist()
 		rf.mu.Unlock()
 	}
@@ -343,7 +349,6 @@ func (rf *Raft) ticker() {
 
 		time.Sleep(100 * time.Millisecond)
 
-		count := 1
 		now := time.Now()
 		rf.mu.Lock()
 		diffTime := now.Sub(rf.lastHeartBeat).Milliseconds()
@@ -354,52 +359,51 @@ func (rf *Raft) ticker() {
 			rf.currentTerm++
 			rf.votedFor = rf.me
 			rf.mu.Unlock()
-			for i := 0; i < len(rf.peers); i++ {
-				if i == rf.me {
-					continue
-				}
-				rf.mu.Lock()
-				go func(i, me, currentTerm, peerLen int, state State) {
-					lastTerm := 0
-					lastLogIndex := len(rf.log)
-					if rf.isLogAtIndexExist(lastLogIndex) {
-						lastTerm = rf.getLogEntryAtIndex(lastLogIndex).Term
-					}
-					args := RequestVoteArgs{Term: currentTerm, CandidatedId: me, LastLogIndex: lastLogIndex, LastLogTerm: lastTerm}
-					reply := RequestVoteReply{}
-					if ok := rf.sendRequestVote(i, &args, &reply); !ok {
-						return
-					}
-					if reply.Term > currentTerm {
-						rf.mu.Lock()
-						rf.currentTerm = reply.Term
-						rf.votedFor = -1
-						rf.state = Follower
-						rf.mu.Unlock()
-					}
-					if reply.VoteGranted && reply.Term <= currentTerm && state == Candidate {
-						rf.mu.Lock()
-						count++
-						//win election
-						if count >= peerLen/2+1 {
-							// fmt.Println(rf.me, " Become Leader in term ", rf.currentTerm)
-							Debug(dElection, "ID: %d Become Leader in term %d", rf.me, rf.currentTerm)
-							rf.resetTimer()
-							if rf.state != Leader {
-								rf.leaderInit()
-								go rf.PeriodHeartBeat()
-							}
-							rf.mu.Unlock()
-							return
-						}
-						rf.mu.Unlock()
-					}
-				}(i, rf.me, rf.currentTerm, len(rf.peers), rf.state)
-				rf.mu.Unlock()
-			}
+			rf.startElection()
 		} else {
 			rf.mu.Unlock()
 		}
+	}
+}
+
+func (rf *Raft) startElection() {
+	count := 1
+	for i := 0; i < len(rf.peers); i++ {
+		if i == rf.me {
+			continue
+		}
+		rf.mu.Lock()
+		go func(i, me, currentTerm, peerLen int, state State) {
+			lastLogIndex, lastTerm := rf.getLastLogIndexAndTerm()
+			args := RequestVoteArgs{Term: currentTerm, CandidatedId: me, LastLogIndex: lastLogIndex, LastLogTerm: lastTerm}
+			reply := RequestVoteReply{}
+			if ok := rf.sendRequestVote(i, &args, &reply); !ok {
+				return
+			}
+			if reply.Term > currentTerm {
+				rf.mu.Lock()
+				rf.stepDown(args.Term)
+				rf.mu.Unlock()
+			}
+			if reply.VoteGranted && reply.Term <= currentTerm && state == Candidate {
+				rf.mu.Lock()
+				count++
+				//win election
+				if count >= peerLen/2+1 {
+					// fmt.Println(rf.me, " Become Leader in term ", rf.currentTerm)
+					Debug(dElection, "ID: %d Become Leader in term %d", rf.me, rf.currentTerm)
+					rf.resetTimer()
+					if rf.state != Leader {
+						rf.leaderInit()
+						go rf.PeriodHeartBeat()
+					}
+					rf.mu.Unlock()
+					return
+				}
+				rf.mu.Unlock()
+			}
+		}(i, rf.me, rf.currentTerm, len(rf.peers), rf.state)
+		rf.mu.Unlock()
 	}
 }
 
@@ -444,9 +448,6 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		} else {
 			rf.log = append(rf.log, entry)
 		}
-		// if len(args.Entries) > 0 {
-		// 	fmt.Println(rf.me, rf.log)
-		// }
 	}
 	if args.LeaderCommitIndex > rf.commitIndex {
 		rf.commitIndex = int(math.Min(float64(args.LeaderCommitIndex), float64(len(rf.log))))
@@ -599,8 +600,33 @@ func (rf *Raft) getLastLogIndex() int {
 	return len(rf.log)
 }
 
+func (rf *Raft) getLastLogTerm() int {
+	if len(rf.log) > 0 {
+		return rf.log[len(rf.log)-1].Term
+	}
+	return 0
+}
+
 func (rf *Raft) getLogEntryAtIndex(index int) LogEntry {
 	return rf.log[index-1]
+}
+
+func (rf *Raft) stepDown(term int) {
+	rf.currentTerm = term
+	rf.state = Follower
+	rf.votedFor = -1
+}
+
+func (rf *Raft) getLastLogIndexAndTerm() (int, int) {
+	return rf.getLastLogIndex(), rf.getLastLogTerm()
+}
+
+func (rf *Raft) isSelfMoreUpToDate(index, term int) bool {
+	myLastLogIndex, myLastLogTerm := rf.getLastLogIndexAndTerm()
+	if myLastLogTerm != term {
+		return myLastLogTerm > term
+	}
+	return myLastLogIndex > index
 }
 
 // the service or tester wants to create a Raft server. the ports
