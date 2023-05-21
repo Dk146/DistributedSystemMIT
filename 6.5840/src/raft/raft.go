@@ -21,7 +21,6 @@ import (
 	//	"bytes"
 
 	"bytes"
-	"math"
 	"math/rand"
 	"sync"
 	"sync/atomic"
@@ -110,6 +109,10 @@ type AppendEntriesArgs struct {
 type AppendEntriesReply struct {
 	Term    int
 	Success bool
+
+	// for optimization
+	ConflictIndex int
+	ConflicTerm   int
 }
 
 // return currentTerm and whether this server
@@ -157,6 +160,8 @@ func (rf *Raft) persist() {
 	// raftstate := w.Bytes()
 	// rf.persister.Save(raftstate, nil)
 
+	// rf.mu.Lock()
+	// defer rf.mu.Unlock()
 	w := new(bytes.Buffer)
 	e := labgob.NewEncoder(w)
 	e.Encode(rf.currentTerm)
@@ -314,8 +319,9 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 		rf.log = append(rf.log, LogEntry{Term: term, Command: command})
 		index = len(rf.log)
 		rf.nextIndex[rf.me]++
-		defer rf.persist()
+		rf.persist()
 		rf.mu.Unlock()
+		// fmt.Println(rf.me, index, command, rf.nextIndex)
 	}
 	return index, term, isLeader
 }
@@ -367,6 +373,7 @@ func (rf *Raft) ticker() {
 }
 
 func (rf *Raft) startElection() {
+	rf.resetTimer()
 	count := 1
 	for i := 0; i < len(rf.peers); i++ {
 		if i == rf.me {
@@ -390,10 +397,9 @@ func (rf *Raft) startElection() {
 				count++
 				//win election
 				if count >= peerLen/2+1 {
-					// fmt.Println(rf.me, " Become Leader in term ", rf.currentTerm)
-					Debug(dElection, "ID: %d Become Leader in term %d", rf.me, rf.currentTerm)
-					rf.resetTimer()
 					if rf.state != Leader {
+						Debug(dElection, "ID: %d Become Leader in term %d", rf.me, rf.currentTerm)
+						// fmt.Println(rf.me, " Become Leader in term ", rf.currentTerm)
 						rf.leaderInit()
 						go rf.PeriodHeartBeat()
 					}
@@ -416,43 +422,93 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 	defer rf.persist()
-
+	if len(args.Entries) > 0 {
+		// fmt.Println(rf.me, " receive from ", args.LeaderID, args.Entries, args.PrevLogIndex, args.PrevLogTerm)
+	}
 	// fmt.Println(args.LeaderCommitIndex, rf.commitIndex)
 	reply.Term = rf.currentTerm
-	reply.Success = false
+	reply.Success = true
 
-	if args.Term < rf.currentTerm {
-		return
-	} else if args.Term > rf.currentTerm {
-		rf.currentTerm = args.Term
-		rf.votedFor = -1
-		rf.state = Follower
-		reply.Success = true
-	} else {
-		reply.Success = true
+	switch {
+	case rf.currentTerm < args.Term:
+		rf.stepDown(args.Term)
+	case rf.currentTerm == args.Term:
+		switch rf.state {
+		case Follower:
+			rf.resetTimer()
+		case Candidate:
+			rf.stepDown(args.Term)
+		case Leader:
+			// fmt.Println("a leader receive a append entries request with same term, ignore")
+		}
+	case rf.currentTerm > args.Term:
+		reply.Success = false
+		reply.ConflictIndex = -1
 	}
-	rf.resetTimer()
 
-	if args.PrevLogIndex > 0 && (!rf.isLogAtIndexExist(args.PrevLogIndex) || rf.getLogEntryAtIndex(args.PrevLogIndex).Term != args.PrevLogTerm) {
+	// if args.PrevLogIndex > 0 && (!rf.isLogAtIndexExist(args.PrevLogIndex) || rf.getLogEntryAtIndex(args.PrevLogIndex).Term != args.PrevLogTerm) {
+	// 	// fmt.Println(args.PrevLogIndex, len(rf.log))
+	// 	reply.Success = false
+	// }
+
+	if args.PrevLogIndex > 0 && !rf.isLogAtIndexExist(args.PrevLogIndex) {
+		// fmt.Println(args.PrevLogIndex, len(rf.log))
+		reply.ConflicTerm = -1
+		reply.ConflictIndex = len(rf.log) + 1
 		reply.Success = false
 	}
+
+	if args.PrevLogIndex > 0 && rf.isLogAtIndexExist(args.PrevLogIndex) && rf.getLogEntryAtIndex(args.PrevLogIndex).Term != args.PrevLogTerm {
+		curTerm := rf.getLogEntryAtIndex(args.PrevLogIndex).Term
+		for i := args.PrevLogIndex; i >= 0; i-- {
+			// if xindex, xterm := rf.getLastLogIndexAndTerm(); xterm != curTerm {
+			// 	reply.ConflicTerm = xterm
+			// 	reply.ConflictIndex = xindex + 1
+			// 	break
+			// }
+			// fmt.Println("CHECK CHECK")
+			if rf.getLogEntryAtIndex(i).Term != curTerm {
+				// fmt.Println(rf.getLogEntryAtIndex(i).Term, i)
+				reply.ConflictIndex = i + 1
+				// fmt.Println("idx", reply.ConflictIndex)
+				break
+			}
+		}
+		// fmt.Println(args.PrevLogIndex, len(rf.log))
+		reply.Success = false
+	}
+
 	if !reply.Success {
 		return
 	}
+	// fmt.Println("Go through")
 	for i, entry := range args.Entries {
 		if rf.isLogAtIndexExist(args.PrevLogIndex + 1 + i) {
 			if rf.getLogEntryAtIndex(args.PrevLogIndex+1+i).Term != entry.Term {
 				rf.log = rf.log[:args.PrevLogIndex+i]
+				rf.log = append(rf.log, entry)
 			}
-			rf.log = append(rf.log, entry)
 		} else {
 			rf.log = append(rf.log, entry)
 		}
 	}
+	// if len(args.Entries) > 0 {
+	// fmt.Println("current log", rf.me, rf.log)
+	// }
+	// if args.LeaderCommitIndex > rf.commitIndex {
+	// 	rf.commitIndex = int(math.Min(float64(args.LeaderCommitIndex), float64(len(rf.log))))
+	// }
+
 	if args.LeaderCommitIndex > rf.commitIndex {
-		rf.commitIndex = int(math.Min(float64(args.LeaderCommitIndex), float64(len(rf.log))))
+		if len(args.Entries) > 0 && args.LeaderCommitIndex > args.PrevLogIndex+len(args.Entries) {
+			rf.commitIndex = args.PrevLogIndex + len(args.Entries)
+		} else {
+			rf.commitIndex = args.LeaderCommitIndex
+		}
 	}
+	// fmt.Println("Applies entry")
 	rf.applyEntries()
+	rf.resetTimer()
 	Debug(dInfo, "ID: %d term %d - receive heartbeat from - ID: %d term %d", rf.me, rf.currentTerm, args.LeaderID, args.Term)
 	// TODO: implement
 }
@@ -461,7 +517,7 @@ func (rf *Raft) PeriodHeartBeat() {
 	// for rf.killed() == false {
 	rf.mu.Lock()
 	// fmt.Println("PeriodHeartBeat server leader ID: ", rf.me)
-	rf.resetTimer()
+	// rf.resetTimer()
 	rf.mu.Unlock()
 	for i := 0; i < len(rf.peers); i++ {
 		if i == rf.me {
@@ -471,7 +527,6 @@ func (rf *Raft) PeriodHeartBeat() {
 			for {
 				rf.mu.Lock()
 				if rf.state != Leader {
-					// fmt.Println("CONVERT THOI HEHEHE")
 					rf.mu.Unlock()
 					break
 				}
@@ -485,9 +540,6 @@ func (rf *Raft) PeriodHeartBeat() {
 				} else {
 					entries = rf.log[:]
 				}
-				// if len(entries) != 0 {
-				// 	fmt.Println(rf.me, "send to", i, entries)
-				// }
 				args := AppendEntriesArgs{
 					Term:              rf.currentTerm,
 					LeaderID:          rf.me,
@@ -498,6 +550,9 @@ func (rf *Raft) PeriodHeartBeat() {
 				}
 				rf.mu.Unlock()
 				reply := AppendEntriesReply{}
+				if len(args.Entries) > 0 {
+					// fmt.Println(rf.me, " send to ", i, args.Entries, args.PrevLogIndex, args.PrevLogTerm, args.LeaderCommitIndex)
+				}
 				ok := rf.sendAppendEntries(i, &args, &reply)
 				sleep := true
 				if ok {
@@ -507,16 +562,23 @@ func (rf *Raft) PeriodHeartBeat() {
 						return
 					}
 					if reply.Success {
+						if len(args.Entries) > 0 {
+							// fmt.Println(rf.me, " received ack from ", i, args.Entries, args.PrevLogIndex, args.PrevLogTerm)
+						}
 						rf.nextIndex[i] = rf.nextIndex[i] + len(args.Entries)
 						rf.matchIndex[i] = rf.nextIndex[i] - 1
-						// if len(args.Entries) > 0 {
-						// 	fmt.Println(i, rf.nextIndex, args.Entries)
-						// }
-						rf.updateCommitedIndex()
-					} else {
-						if rf.nextIndex[i] > 1 {
-							rf.nextIndex[i] = rf.nextIndex[i] - 1
+						if rf.updateCommitedIndex() {
+							sleep = false
 						}
+					} else {
+						// if rf.nextIndex[i] > 1 {
+						// 	rf.nextIndex[i] = rf.nextIndex[i] - 1
+						// }
+
+						if reply.ConflictIndex != -1 {
+							rf.nextIndex[i] = reply.ConflictIndex
+						}
+
 						sleep = false
 					}
 					rf.mu.Unlock()
@@ -532,9 +594,7 @@ func (rf *Raft) PeriodHeartBeat() {
 
 				rf.mu.Lock()
 				if reply.Term > rf.currentTerm {
-					rf.currentTerm = reply.Term
-					rf.votedFor = -1
-					rf.state = Follower
+					rf.stepDown(reply.Term)
 				}
 				rf.mu.Unlock()
 			}
@@ -544,9 +604,8 @@ func (rf *Raft) PeriodHeartBeat() {
 }
 
 func (rf *Raft) resetTimer() {
-	// fmt.Println(rf.me, "reset timer")
 	rf.lastHeartBeat = time.Now()
-	rf.nextTimer = 650 + (rand.Int() % 400)
+	rf.nextTimer = 550 + (rand.Int() % 400)
 }
 
 func (rf *Raft) leaderInit() {
@@ -558,7 +617,7 @@ func (rf *Raft) leaderInit() {
 	rf.matchIndex = make([]int, len(rf.peers))
 }
 
-func (rf *Raft) updateCommitedIndex() {
+func (rf *Raft) updateCommitedIndex() bool {
 	majority := len(rf.peers) / 2
 	for n := rf.commitIndex + 1; n <= rf.getLastLogIndex(); n++ {
 		count := 1
@@ -575,11 +634,13 @@ func (rf *Raft) updateCommitedIndex() {
 			rf.commitIndex = n
 		}
 	}
-	rf.applyEntries()
+	return rf.applyEntries()
 }
 
-func (rf *Raft) applyEntries() {
+func (rf *Raft) applyEntries() bool {
+	res := false
 	for rf.lastApplied < rf.commitIndex {
+		res = true
 		rf.lastApplied += 1
 		command := rf.getLogEntryAtIndex(rf.lastApplied).Command
 		i := rf.lastApplied
@@ -589,9 +650,10 @@ func (rf *Raft) applyEntries() {
 			CommandIndex: i,
 			Command:      command,
 		}
-		// fmt.Println(rf.me, rf.log)
 	}
+	return res
 }
+
 func (rf *Raft) isLogAtIndexExist(index int) bool {
 	return len(rf.log) >= index && index > 0
 }
@@ -608,6 +670,9 @@ func (rf *Raft) getLastLogTerm() int {
 }
 
 func (rf *Raft) getLogEntryAtIndex(index int) LogEntry {
+	if index == 0 {
+		return LogEntry{Term: 0}
+	}
 	return rf.log[index-1]
 }
 
