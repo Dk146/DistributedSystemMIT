@@ -1,0 +1,1200 @@
+000010 TIMR S0 reset timer
+000025 TIMR S1 reset timer
+000026 TIMR S2 reset timer
+000027 TIMR S3 reset timer
+000030 TIMR S4 reset timer
+Test (2C): Figure 8 (unreliable) ...
+006277 ELEC S0 Start election term%!(EXTRA int=1)
+006278 TIMR S0 reset timer
+006402 VOTE S3 rcv req vote from S0
+006403 TIMR S3 reset timer
+006404 TIMR S3 reset timer
+006406 VOTE S0 rcv vote from S3
+006494 VOTE S4 rcv req vote from S0
+006495 TIMR S4 reset timer
+006495 TIMR S4 reset timer
+006497 VOTE S0 rcv vote from S4
+006497 ELEC S0 Become Leader in term 1
+006498 TIMR S0 reset timer
+006501 TIMR S0 reset timer
+006502 TIMR S0 reset timer
+006519 TIMR S0 reset timer
+006569 TIMR S2 reset timer
+006569 INFO S2 receive heartbeat from S0
+006570 VOTE S1 rcv req vote from S0
+006571 TIMR S1 reset timer
+006571 TIMR S1 reset timer
+006571 TIMR S0 reset timer
+006573 VOTE S0 rcv vote from S1
+006738 TIMR S3 reset timer
+006739 INFO S3 receive heartbeat from S0
+006739 TIMR S1 reset timer
+006740 INFO S1 receive heartbeat from S0
+006757 TIMR S4 reset timer
+006758 INFO S4 receive heartbeat from S0
+006809 TIMR S2 reset timer
+006810 INFO S2 receive heartbeat from S0
+007751 TIMR S0 reset timer
+007753 TIMR S0 reset timer
+007763 TIMR S0 reset timer
+007780 TIMR S1 reset timer
+007781 INFO S1 receive heartbeat from S0
+007813 TIMR S0 reset timer
+007898 TIMR S4 reset timer
+007899 INFO S4 receive heartbeat from S0
+007900 CMIT S0 -> chan 1 to 1
+007901 TIMR S0 reset timer
+007910 TIMR S3 reset timer
+007911 INFO S3 receive heartbeat from S0
+007910 TIMR S2 reset timer
+007912 INFO S2 receive heartbeat from S0
+008034 TIMR S4 reset timer
+008035 INFO S4 receive heartbeat from S0
+008035 CMIT S4 -> chan 1 to 1
+008784 TIMR S0 reset timer
+008914 TIMR S0 reset timer
+008915 TIMR S0 reset timer
+009063 TIMR S0 reset timer
+014462 ELEC S2 Start election term%!(EXTRA int=2)
+014464 ELEC S3 Start election term%!(EXTRA int=2)
+014465 TIMR S3 reset timer
+014463 TIMR S2 reset timer
+014500 VOTE S4 rcv req vote from S3
+014501 TIMR S4 reset timer
+014501 TIMR S4 reset timer
+014503 VOTE S3 rcv vote from S4
+014606 VOTE S4 rcv req vote from S2
+014607 VOTE S2 rcv req vote from S3
+014609 VOTE S3 rcv req vote from S2
+014697 VOTE S1 rcv req vote from S3
+014698 TIMR S1 reset timer
+014698 TIMR S1 reset timer
+017502 ELEC S0 Start election term%!(EXTRA int=2)
+017503 TIMR S0 reset timer
+020615 ELEC S2 Start election term%!(EXTRA int=3)
+020616 TIMR S2 reset timer
+020675 VOTE S3 rcv req vote from S2
+020675 TIMR S3 reset timer
+020676 TIMR S3 reset timer
+020677 VOTE S2 rcv vote from S3
+020709 VOTE S1 rcv req vote from S2
+020709 TIMR S1 reset timer
+020710 TIMR S1 reset timer
+020711 VOTE S2 rcv vote from S1
+020711 ELEC S2 Become Leader in term 3
+020712 TIMR S2 reset timer
+020712 TIMR S2 reset timer
+020714 TIMR S2 reset timer
+020716 TIMR S2 reset timer
+020769 VOTE S4 rcv req vote from S2
+020770 TIMR S4 reset timer
+020770 TIMR S4 reset timer
+020772 VOTE S2 rcv vote from S4
+020898 TIMR S2 reset timer
+020970 TIMR S1 reset timer
+020971 INFO S1 receive heartbeat from S2
+020984 TIMR S3 reset timer
+020984 INFO S3 receive heartbeat from S2
+021023 TIMR S2 reset timer
+021254 TIMR S2 reset timer
+021430 TIMR S4 reset timer
+021431 INFO S4 receive heartbeat from S2
+022008 TIMR S2 reset timer
+022010 TIMR S2 reset timer
+022039 TIMR S3 reset timer
+022040 INFO S3 receive heartbeat from S2
+022243 TIMR S1 reset timer
+022244 INFO S1 receive heartbeat from S2
+022472 TIMR S2 reset timer
+022530 TIMR S4 reset timer
+022531 INFO S4 receive heartbeat from S2
+023053 TIMR S2 reset timer
+023147 TIMR S3 reset timer
+023148 INFO S3 receive heartbeat from S2
+023258 TIMR S2 reset timer
+023281 TIMR S1 reset timer
+023282 INFO S1 receive heartbeat from S2
+023575 TIMR S2 reset timer
+023753 TIMR S4 reset timer
+023754 INFO S4 receive heartbeat from S2
+023756 CMIT S2 -> chan 1 to 2
+023756 TIMR S2 reset timer
+024027 TIMR S4 reset timer
+024028 INFO S4 receive heartbeat from S2
+024028 CMIT S4 -> chan 2 to 2
+024029 TIMR S2 reset timer
+024157 TIMR S2 reset timer
+024177 TIMR S4 reset timer
+024178 INFO S4 receive heartbeat from S2
+024301 TIMR S2 reset timer
+024304 TIMR S3 reset timer
+024305 INFO S3 receive heartbeat from S2
+024305 CMIT S3 -> chan 1 to 2
+024507 TIMR S1 reset timer
+024507 INFO S1 receive heartbeat from S2
+024507 CMIT S1 -> chan 1 to 2
+025201 TIMR S2 reset timer
+025317 TIMR S2 reset timer
+025517 TIMR S2 reset timer
+027699 ELEC S0 Start election term%!(EXTRA int=3)
+027699 TIMR S0 reset timer
+030782 ELEC S3 Start election term%!(EXTRA int=4)
+030783 TIMR S3 reset timer
+030825 VOTE S4 rcv req vote from S3
+030826 TIMR S4 reset timer
+030826 TIMR S4 reset timer
+030828 VOTE S3 rcv vote from S4
+031012 VOTE S1 rcv req vote from S3
+031013 TIMR S1 reset timer
+031013 TIMR S1 reset timer
+034856 ELEC S2 Start election term%!(EXTRA int=4)
+034857 TIMR S2 reset timer
+037934 ELEC S3 Start election term%!(EXTRA int=5)
+037935 TIMR S3 reset timer
+037935 ELEC S0 Start election term%!(EXTRA int=4)
+037937 TIMR S0 reset timer
+038014 VOTE S1 rcv req vote from S3
+038014 TIMR S1 reset timer
+038015 TIMR S1 reset timer
+038016 VOTE S3 rcv vote from S1
+038044 VOTE S4 rcv req vote from S3
+038044 TIMR S4 reset timer
+038045 TIMR S4 reset timer
+038046 VOTE S3 rcv vote from S4
+038046 ELEC S3 Become Leader in term 5
+038047 TIMR S3 reset timer
+038047 TIMR S3 reset timer
+038049 TIMR S3 reset timer
+038050 TIMR S3 reset timer
+038208 TIMR S1 reset timer
+038209 INFO S1 receive heartbeat from S3
+038210 TIMR S3 reset timer
+038287 TIMR S4 reset timer
+038287 INFO S4 receive heartbeat from S3
+038288 TIMR S3 reset timer
+044085 ELEC S0 Start election term%!(EXTRA int=5)
+044086 TIMR S0 reset timer
+044086 ELEC S2 Start election term%!(EXTRA int=5)
+044087 TIMR S2 reset timer
+044303 VOTE S1 rcv req vote from S0
+045113 ELEC S1 Start election term%!(EXTRA int=6)
+045115 TIMR S1 reset timer
+045141 VOTE S0 rcv req vote from S1
+045142 TIMR S0 reset timer
+045142 TIMR S0 reset timer
+045322 VOTE S4 rcv req vote from S1
+045323 TIMR S4 reset timer
+045323 TIMR S4 reset timer
+045324 VOTE S1 rcv vote from S4
+047133 ELEC S3 Start election term%!(EXTRA int=6)
+047134 TIMR S3 reset timer
+051176 ELEC S0 Start election term%!(EXTRA int=7)
+051177 TIMR S0 reset timer
+051327 VOTE S1 rcv req vote from S0
+051327 TIMR S1 reset timer
+051434 VOTE S4 rcv req vote from S0
+051435 TIMR S4 reset timer
+052195 ELEC S2 Start election term%!(EXTRA int=6)
+052196 TIMR S2 reset timer
+053239 ELEC S3 Start election term%!(EXTRA int=7)
+053240 TIMR S3 reset timer
+058290 ELEC S1 Start election term%!(EXTRA int=8)
+058291 TIMR S1 reset timer
+058383 VOTE S4 rcv req vote from S1
+058384 TIMR S4 reset timer
+058384 TIMR S4 reset timer
+058463 VOTE S0 rcv req vote from S1
+058464 TIMR S0 reset timer
+058464 TIMR S0 reset timer
+059292 ELEC S2 Start election term%!(EXTRA int=7)
+059293 TIMR S2 reset timer
+063398 ELEC S3 Start election term%!(EXTRA int=8)
+063399 TIMR S3 reset timer
+064413 ELEC S4 Start election term%!(EXTRA int=9)
+064413 TIMR S4 reset timer
+064541 VOTE S0 rcv req vote from S4
+064541 TIMR S0 reset timer
+064541 TIMR S0 reset timer
+064620 VOTE S1 rcv req vote from S4
+064620 TIMR S1 reset timer
+064620 TIMR S1 reset timer
+064622 VOTE S4 rcv vote from S1
+067458 ELEC S2 Start election term%!(EXTRA int=8)
+067459 TIMR S2 reset timer
+071534 ELEC S4 Start election term%!(EXTRA int=10)
+071535 TIMR S4 reset timer
+071534 ELEC S0 Start election term%!(EXTRA int=10)
+071536 TIMR S0 reset timer
+071534 ELEC S1 Start election term%!(EXTRA int=10)
+071537 TIMR S1 reset timer
+071542 VOTE S1 rcv req vote from S4
+071605 VOTE S4 rcv req vote from S0
+071605 VOTE S0 rcv req vote from S4
+071619 VOTE S1 rcv vote from S4
+071635 VOTE S0 rcv req vote from S1
+071677 VOTE S1 rcv vote from S0
+071677 ELEC S1 Become Leader in term 10
+071678 TIMR S1 reset timer
+071678 TIMR S1 reset timer
+071680 TIMR S1 reset timer
+071680 TIMR S1 reset timer
+071730 VOTE S1 rcv req vote from S0
+071731 TIMR S4 reset timer
+071732 INFO S4 receive heartbeat from S1
+071754 VOTE S4 rcv req vote from S1
+071754 TIMR S4 reset timer
+071980 TIMR S0 reset timer
+071981 INFO S0 conflict S1 index 1
+073575 ELEC S3 Start election term%!(EXTRA int=9)
+073575 TIMR S3 reset timer
+074905 TIMR S1 reset timer
+076633 ELEC S2 Start election term%!(EXTRA int=9)
+076634 TIMR S2 reset timer
+076638 VOTE S0 rcv req vote from S2
+076639 TIMR S2 reset timer
+076751 VOTE S4 rcv req vote from S2
+077157 TIMR S1 reset timer
+079710 ELEC S0 Start election term%!(EXTRA int=11)
+079711 TIMR S0 reset timer
+079711 ELEC S3 Start election term%!(EXTRA int=10)
+079713 TIMR S3 reset timer
+079716 VOTE S2 rcv req vote from S0
+079716 TIMR S2 reset timer
+081453 VOTE S1 rcv vote from S4
+081775 ELEC S4 Start election term%!(EXTRA int=11)
+081776 TIMR S4 reset timer
+081886 VOTE S2 rcv req vote from S4
+081977 VOTE S0 rcv req vote from S4
+085919 ELEC S2 Start election term%!(EXTRA int=12)
+085920 TIMR S2 reset timer
+085923 VOTE S4 rcv req vote from S2
+085923 TIMR S4 reset timer
+085923 TIMR S4 reset timer
+085925 VOTE S2 rcv vote from S4
+086113 VOTE S0 rcv req vote from S2
+086113 TIMR S0 reset timer
+086114 TIMR S0 reset timer
+087974 ELEC S1 Start election term%!(EXTRA int=11)
+087975 TIMR S1 reset timer
+088980 ELEC S3 Start election term%!(EXTRA int=11)
+088981 TIMR S3 reset timer
+093359 VOTE S2 rcv vote from S0
+093360 ELEC S2 Become Leader in term 12
+093360 TIMR S2 reset timer
+093361 TIMR S2 reset timer
+093362 TIMR S2 reset timer
+093364 TIMR S2 reset timer
+093566 TIMR S4 reset timer
+093566 TIMR S0 reset timer
+093567 INFO S0 conflict S2 index 1
+093566 INFO S4 conflict S2 index 3
+093570 TIMR S2 reset timer
+093804 TIMR S4 reset timer
+093805 INFO S4 receive heartbeat from S2
+094009 ELEC S1 Start election term%!(EXTRA int=12)
+094009 TIMR S1 reset timer
+094852 TIMR S2 reset timer
+097124 ELEC S3 Start election term%!(EXTRA int=12)
+097125 TIMR S3 reset timer
+097301 VOTE S0 rcv req vote from S3
+101188 ELEC S1 Start election term%!(EXTRA int=13)
+101189 TIMR S1 reset timer
+102233 ELEC S4 Start election term%!(EXTRA int=13)
+102234 TIMR S4 reset timer
+102234 ELEC S0 Start election term%!(EXTRA int=13)
+102235 TIMR S0 reset timer
+102277 VOTE S4 rcv req vote from S0
+102277 VOTE S3 rcv req vote from S4
+102279 TIMR S3 reset timer
+102280 VOTE S3 rcv req vote from S0
+102467 VOTE S0 rcv req vote from S4
+102523 TIMR S2 reset timer
+108445 ELEC S0 Start election term%!(EXTRA int=14)
+108446 TIMR S0 reset timer
+108463 VOTE S4 rcv req vote from S0
+108464 TIMR S4 reset timer
+108498 VOTE S3 rcv req vote from S0
+108499 TIMR S3 reset timer
+111522 ELEC S1 Start election term%!(EXTRA int=14)
+111523 TIMR S1 reset timer
+112558 ELEC S2 Start election term%!(EXTRA int=13)
+112559 TIMR S2 reset timer
+114620 ELEC S4 Start election term%!(EXTRA int=15)
+114621 TIMR S4 reset timer
+114768 VOTE S3 rcv req vote from S4
+114769 TIMR S3 reset timer
+114778 VOTE S0 rcv req vote from S4
+114778 TIMR S0 reset timer
+114778 TIMR S0 reset timer
+116805 VOTE S4 rcv vote from S0
+119707 ELEC S2 Start election term%!(EXTRA int=14)
+119708 TIMR S2 reset timer
+120753 ELEC S1 Start election term%!(EXTRA int=15)
+120754 TIMR S1 reset timer
+120753 ELEC S0 Start election term%!(EXTRA int=16)
+120756 TIMR S0 reset timer
+120841 VOTE S3 rcv req vote from S0
+120842 TIMR S3 reset timer
+122776 ELEC S4 Start election term%!(EXTRA int=16)
+122778 TIMR S4 reset timer
+122883 VOTE S0 rcv req vote from S4
+123069 VOTE S3 rcv req vote from S4
+127869 ELEC S2 Start election term%!(EXTRA int=15)
+127870 TIMR S2 reset timer
+128875 ELEC S0 Start election term%!(EXTRA int=17)
+128879 TIMR S0 reset timer
+129140 VOTE S3 rcv req vote from S0
+129141 TIMR S3 reset timer
+129919 ELEC S4 Start election term%!(EXTRA int=17)
+129920 TIMR S4 reset timer
+129920 ELEC S1 Start election term%!(EXTRA int=16)
+129927 TIMR S1 reset timer
+130170 VOTE S0 rcv req vote from S4
+130190 VOTE S3 rcv req vote from S4
+135033 ELEC S0 Start election term%!(EXTRA int=18)
+135034 TIMR S0 reset timer
+135266 VOTE S3 rcv req vote from S0
+135266 TIMR S3 reset timer
+135267 VOTE S4 rcv req vote from S0
+135267 TIMR S4 reset timer
+136040 ELEC S2 Start election term%!(EXTRA int=16)
+136041 TIMR S2 reset timer
+139096 ELEC S1 Start election term%!(EXTRA int=17)
+139097 TIMR S1 reset timer
+141147 ELEC S0 Start election term%!(EXTRA int=19)
+141148 TIMR S0 reset timer
+141234 VOTE S3 rcv req vote from S0
+141234 TIMR S3 reset timer
+141391 VOTE S4 rcv req vote from S0
+141393 TIMR S4 reset timer
+144203 ELEC S2 Start election term%!(EXTRA int=17)
+144204 TIMR S2 reset timer
+146270 ELEC S1 Start election term%!(EXTRA int=18)
+146271 TIMR S1 reset timer
+149363 ELEC S4 Start election term%!(EXTRA int=20)
+149364 TIMR S4 reset timer
+149431 VOTE S0 rcv req vote from S4
+149432 TIMR S0 reset timer
+149432 TIMR S0 reset timer
+149604 VOTE S3 rcv req vote from S4
+149604 TIMR S3 reset timer
+150415 ELEC S2 Start election term%!(EXTRA int=18)
+150416 TIMR S2 reset timer
+152448 ELEC S1 Start election term%!(EXTRA int=19)
+152449 TIMR S1 reset timer
+157554 ELEC S3 Start election term%!(EXTRA int=21)
+157555 TIMR S3 reset timer
+157555 ELEC S4 Start election term%!(EXTRA int=21)
+157556 TIMR S4 reset timer
+157661 VOTE S3 rcv req vote from S4
+157695 VOTE S0 rcv req vote from S3
+157697 TIMR S0 reset timer
+157698 TIMR S0 reset timer
+157702 VOTE S0 rcv req vote from S4
+157762 VOTE S4 rcv req vote from S3
+158133 VOTE S4 rcv vote from S0
+159614 ELEC S1 Start election term%!(EXTRA int=20)
+159615 TIMR S1 reset timer
+160645 ELEC S2 Start election term%!(EXTRA int=19)
+160647 TIMR S2 reset timer
+160994 VOTE S3 rcv vote from S0
+164696 ELEC S4 Start election term%!(EXTRA int=22)
+164696 TIMR S4 reset timer
+164963 VOTE S3 rcv req vote from S4
+164964 TIMR S3 reset timer
+164963 VOTE S0 rcv req vote from S4
+164966 TIMR S0 reset timer
+164966 TIMR S0 reset timer
+166704 ELEC S1 Start election term%!(EXTRA int=21)
+166705 TIMR S1 reset timer
+168043 VOTE S4 rcv vote from S0
+168745 ELEC S2 Start election term%!(EXTRA int=20)
+168745 TIMR S2 reset timer
+171852 ELEC S0 Start election term%!(EXTRA int=23)
+171854 TIMR S0 reset timer
+171853 ELEC S4 Start election term%!(EXTRA int=23)
+171854 TIMR S4 reset timer
+171967 VOTE S3 rcv req vote from S0
+171968 TIMR S3 reset timer
+171975 VOTE S0 rcv req vote from S4
+172000 VOTE S3 rcv req vote from S4
+172135 VOTE S4 rcv req vote from S0
+175952 ELEC S1 Start election term%!(EXTRA int=22)
+175953 TIMR S1 reset timer
+176956 ELEC S2 Start election term%!(EXTRA int=21)
+176957 TIMR S2 reset timer
+179032 ELEC S4 Start election term%!(EXTRA int=24)
+179033 TIMR S4 reset timer
+179196 VOTE S3 rcv req vote from S4
+179197 TIMR S3 reset timer
+179299 VOTE S0 rcv req vote from S4
+179300 TIMR S0 reset timer
+179300 TIMR S0 reset timer
+181746 VOTE S4 rcv vote from S0
+185203 ELEC S1 Start election term%!(EXTRA int=23)
+185204 TIMR S1 reset timer
+186209 ELEC S2 Start election term%!(EXTRA int=22)
+186210 TIMR S2 reset timer
+187212 ELEC S0 Start election term%!(EXTRA int=25)
+187213 TIMR S0 reset timer
+187379 VOTE S3 rcv req vote from S0
+187380 TIMR S3 reset timer
+187426 VOTE S4 rcv req vote from S0
+187427 TIMR S4 reset timer
+192324 ELEC S1 Start election term%!(EXTRA int=24)
+192325 TIMR S1 reset timer
+194351 ELEC S2 Start election term%!(EXTRA int=23)
+194352 TIMR S2 reset timer
+195502 ELEC S0 Start election term%!(EXTRA int=26)
+195503 TIMR S0 reset timer
+195504 VOTE S4 rcv req vote from S0
+195505 TIMR S4 reset timer
+195741 VOTE S3 rcv req vote from S0
+195742 TIMR S3 reset timer
+201616 ELEC S1 Start election term%!(EXTRA int=25)
+201617 TIMR S1 reset timer
+202659 ELEC S0 Start election term%!(EXTRA int=27)
+202661 TIMR S0 reset timer
+202707 VOTE S4 rcv req vote from S0
+202708 TIMR S4 reset timer
+202722 VOTE S3 rcv req vote from S0
+202723 TIMR S3 reset timer
+203673 ELEC S2 Start election term%!(EXTRA int=24)
+203674 TIMR S2 reset timer
+209866 ELEC S4 Start election term%!(EXTRA int=28)
+209867 TIMR S4 reset timer
+209868 ELEC S1 Start election term%!(EXTRA int=26)
+209868 TIMR S1 reset timer
+209876 ELEC S3 Start election term%!(EXTRA int=28)
+209877 TIMR S3 reset timer
+209927 VOTE S0 rcv req vote from S4
+209927 TIMR S0 reset timer
+209928 TIMR S0 reset timer
+209929 VOTE S4 rcv vote from S0
+209974 VOTE S0 rcv req vote from S3
+210170 VOTE S4 rcv req vote from S3
+213876 ELEC S2 Start election term%!(EXTRA int=25)
+213877 TIMR S2 reset timer
+215954 ELEC S4 Start election term%!(EXTRA int=29)
+215955 TIMR S4 reset timer
+216025 VOTE S0 rcv req vote from S4
+216025 TIMR S0 reset timer
+216025 TIMR S0 reset timer
+216027 VOTE S4 rcv vote from S0
+216137 VOTE S3 rcv req vote from S4
+216137 TIMR S3 reset timer
+217967 ELEC S1 Start election term%!(EXTRA int=27)
+217967 TIMR S1 reset timer
+222049 ELEC S2 Start election term%!(EXTRA int=26)
+222050 TIMR S2 reset timer
+223083 ELEC S4 Start election term%!(EXTRA int=30)
+223084 TIMR S4 reset timer
+223084 ELEC S0 Start election term%!(EXTRA int=30)
+223085 TIMR S0 reset timer
+223297 VOTE S3 rcv req vote from S4
+223297 TIMR S3 reset timer
+223356 VOTE S3 rcv req vote from S0
+227215 ELEC S1 Start election term%!(EXTRA int=28)
+227216 TIMR S1 reset timer
+229245 ELEC S2 Start election term%!(EXTRA int=27)
+229246 TIMR S2 reset timer
+230292 ELEC S3 Start election term%!(EXTRA int=31)
+230293 TIMR S3 reset timer
+230386 VOTE S0 rcv req vote from S3
+230386 TIMR S0 reset timer
+230387 TIMR S0 reset timer
+230539 VOTE S4 rcv req vote from S3
+230539 TIMR S4 reset timer
+230539 TIMR S4 reset timer
+233142 VOTE S3 rcv vote from S0
+234364 ELEC S1 Start election term%!(EXTRA int=29)
+234365 TIMR S1 reset timer
+236435 ELEC S2 Start election term%!(EXTRA int=28)
+236436 TIMR S2 reset timer
+237438 ELEC S4 Start election term%!(EXTRA int=32)
+237439 TIMR S4 reset timer
+237438 ELEC S0 Start election term%!(EXTRA int=32)
+237441 TIMR S0 reset timer
+237443 VOTE S0 rcv req vote from S4
+237457 VOTE S3 rcv req vote from S0
+237458 TIMR S3 reset timer
+237631 VOTE S3 rcv req vote from S4
+238789 VOTE S3 rcv vote from S4
+238790 ELEC S3 Become Leader in term 32
+238790 TIMR S3 reset timer
+238791 TIMR S3 reset timer
+238792 TIMR S3 reset timer
+238793 TIMR S3 reset timer
+238845 TIMR S4 reset timer
+238846 INFO S4 conflict S3 index 2
+238882 TIMR S3 reset timer
+238920 TIMR S0 reset timer
+238921 INFO S0 conflict S3 index 1
+241514 ELEC S1 Start election term%!(EXTRA int=30)
+241515 TIMR S1 reset timer
+241571 VOTE S4 rcv req vote from S1
+241681 VOTE S0 rcv req vote from S1
+242541 TIMR S3 reset timer
+243023 TIMR S3 reset timer
+243578 ELEC S2 Start election term%!(EXTRA int=29)
+243579 TIMR S2 reset timer
+243843 TIMR S1 reset timer
+245665 ELEC S0 Start election term%!(EXTRA int=33)
+245666 TIMR S0 reset timer
+245666 ELEC S4 Start election term%!(EXTRA int=33)
+245667 TIMR S4 reset timer
+245735 VOTE S0 rcv req vote from S4
+245793 VOTE S1 rcv req vote from S4
+245793 TIMR S1 reset timer
+245841 VOTE S1 rcv req vote from S0
+245928 VOTE S4 rcv req vote from S0
+250281 TIMR S1 reset timer
+251785 ELEC S3 Start election term%!(EXTRA int=33)
+251786 TIMR S3 reset timer
+252806 ELEC S0 Start election term%!(EXTRA int=34)
+252807 TIMR S0 reset timer
+252821 VOTE S4 rcv req vote from S0
+252821 TIMR S4 reset timer
+252843 VOTE S1 rcv req vote from S0
+252844 TIMR S1 reset timer
+253820 ELEC S2 Start election term%!(EXTRA int=30)
+253821 TIMR S2 reset timer
+259011 ELEC S0 Start election term%!(EXTRA int=35)
+259011 TIMR S0 reset timer
+259027 VOTE S1 rcv req vote from S0
+259028 TIMR S1 reset timer
+259187 VOTE S4 rcv req vote from S0
+259187 TIMR S4 reset timer
+262040 ELEC S2 Start election term%!(EXTRA int=31)
+262041 ELEC S3 Start election term%!(EXTRA int=34)
+262041 TIMR S3 reset timer
+262041 TIMR S2 reset timer
+265134 ELEC S1 Start election term%!(EXTRA int=36)
+265134 TIMR S1 reset timer
+265413 VOTE S0 rcv req vote from S1
+265414 TIMR S0 reset timer
+265414 TIMR S0 reset timer
+265416 VOTE S1 rcv vote from S0
+268284 ELEC S3 Start election term%!(EXTRA int=35)
+268285 TIMR S3 reset timer
+268283 ELEC S4 Start election term%!(EXTRA int=36)
+268302 TIMR S4 reset timer
+268449 VOTE S1 rcv req vote from S4
+268514 VOTE S0 rcv req vote from S4
+271355 ELEC S1 Start election term%!(EXTRA int=37)
+271356 TIMR S1 reset timer
+271356 ELEC S2 Start election term%!(EXTRA int=32)
+271357 TIMR S2 reset timer
+271427 VOTE S0 rcv req vote from S1
+271428 TIMR S0 reset timer
+271428 TIMR S0 reset timer
+271428 VOTE S4 rcv req vote from S1
+271429 TIMR S4 reset timer
+271429 TIMR S4 reset timer
+271431 VOTE S1 rcv vote from S4
+276592 ELEC S3 Start election term%!(EXTRA int=36)
+276593 TIMR S3 reset timer
+279662 ELEC S4 Start election term%!(EXTRA int=38)
+279662 TIMR S4 reset timer
+279662 ELEC S2 Start election term%!(EXTRA int=33)
+279663 TIMR S2 reset timer
+279685 ELEC S0 Start election term%!(EXTRA int=38)
+279685 TIMR S0 reset timer
+279698 VOTE S1 rcv req vote from S4
+279699 TIMR S1 reset timer
+279743 VOTE S4 rcv req vote from S0
+279815 VOTE S1 rcv req vote from S0
+279925 VOTE S0 rcv req vote from S4
+283710 ELEC S3 Start election term%!(EXTRA int=37)
+283710 TIMR S3 reset timer
+285799 ELEC S1 Start election term%!(EXTRA int=39)
+285800 TIMR S1 reset timer
+285972 VOTE S0 rcv req vote from S1
+285972 TIMR S0 reset timer
+285972 TIMR S0 reset timer
+285973 VOTE S1 rcv vote from S0
+285976 VOTE S4 rcv req vote from S1
+285976 TIMR S4 reset timer
+285976 TIMR S4 reset timer
+286826 ELEC S2 Start election term%!(EXTRA int=34)
+286827 TIMR S2 reset timer
+291916 ELEC S3 Start election term%!(EXTRA int=38)
+291917 TIMR S3 reset timer
+293966 ELEC S4 Start election term%!(EXTRA int=40)
+293966 TIMR S4 reset timer
+293968 ELEC S1 Start election term%!(EXTRA int=40)
+293968 TIMR S1 reset timer
+294037 VOTE S0 rcv req vote from S4
+294037 TIMR S0 reset timer
+294037 TIMR S0 reset timer
+294119 VOTE S1 rcv req vote from S4
+294234 VOTE S0 rcv req vote from S1
+297076 ELEC S2 Start election term%!(EXTRA int=35)
+297078 TIMR S2 reset timer
+297425 VOTE S1 rcv vote from S4
+297425 ELEC S1 Become Leader in term 40
+297426 TIMR S1 reset timer
+297426 TIMR S1 reset timer
+297427 TIMR S1 reset timer
+297428 TIMR S1 reset timer
+297468 TIMR S4 reset timer
+297469 INFO S4 conflict S1 index 2
+297470 TIMR S1 reset timer
+297559 TIMR S1 reset timer
+297575 TIMR S4 reset timer
+297575 INFO S4 conflict S1 index 2
+297621 TIMR S0 reset timer
+297622 INFO S0 conflict S1 index 1
+300122 TIMR S1 reset timer
+300136 ELEC S3 Start election term%!(EXTRA int=39)
+300137 TIMR S3 reset timer
+300186 VOTE S0 rcv req vote from S3
+300188 TIMR S3 reset timer
+305175 ELEC S2 Start election term%!(EXTRA int=36)
+305176 TIMR S2 reset timer
+305175 ELEC S0 Start election term%!(EXTRA int=41)
+305176 TIMR S0 reset timer
+305392 VOTE S3 rcv req vote from S0
+305393 TIMR S3 reset timer
+305403 VOTE S4 rcv req vote from S0
+305405 TIMR S4 reset timer
+306455 TIMR S1 reset timer
+311420 VOTE S4 rcv vote from S0
+312429 ELEC S3 Start election term%!(EXTRA int=42)
+312429 TIMR S3 reset timer
+312599 VOTE S4 rcv req vote from S3
+312600 TIMR S4 reset timer
+312600 TIMR S4 reset timer
+312662 VOTE S0 rcv req vote from S3
+312663 TIMR S0 reset timer
+312663 TIMR S0 reset timer
+313462 ELEC S2 Start election term%!(EXTRA int=37)
+313463 TIMR S2 reset timer
+315102 TIMR S1 reset timer
+315859 VOTE S3 rcv vote from S4
+318564 ELEC S3 Start election term%!(EXTRA int=43)
+318565 TIMR S3 reset timer
+318622 VOTE S4 rcv req vote from S3
+318623 TIMR S4 reset timer
+318624 TIMR S4 reset timer
+318625 VOTE S3 rcv vote from S4
+318622 VOTE S0 rcv req vote from S3
+318625 TIMR S0 reset timer
+318626 TIMR S0 reset timer
+320625 ELEC S2 Start election term%!(EXTRA int=38)
+320626 TIMR S2 reset timer
+324754 ELEC S3 Start election term%!(EXTRA int=44)
+324755 TIMR S3 reset timer
+324754 ELEC S1 Start election term%!(EXTRA int=41)
+324756 TIMR S1 reset timer
+324878 VOTE S0 rcv req vote from S3
+324880 TIMR S0 reset timer
+324880 TIMR S0 reset timer
+324882 VOTE S3 rcv vote from S0
+324985 VOTE S4 rcv req vote from S3
+324986 TIMR S4 reset timer
+324987 TIMR S4 reset timer
+328818 ELEC S2 Start election term%!(EXTRA int=39)
+328819 TIMR S2 reset timer
+331936 ELEC S0 Start election term%!(EXTRA int=45)
+331937 TIMR S0 reset timer
+332113 VOTE S3 rcv req vote from S0
+332114 TIMR S3 reset timer
+332461 VOTE S3 rcv vote from S4
+332462 ELEC S3 Become Leader in term 45
+332462 TIMR S3 reset timer
+332464 TIMR S3 reset timer
+332465 TIMR S3 reset timer
+332466 TIMR S3 reset timer
+332518 TIMR S4 reset timer
+332519 INFO S4 conflict S3 index 39
+332746 TIMR S0 reset timer
+332747 INFO S0 conflict S3 index 52
+332982 ELEC S1 Start election term%!(EXTRA int=42)
+332983 TIMR S1 reset timer
+334569 VOTE S3 rcv vote from S0
+336052 ELEC S2 Start election term%!(EXTRA int=40)
+336053 TIMR S2 reset timer
+339110 ELEC S0 Start election term%!(EXTRA int=46)
+339111 TIMR S0 reset timer
+339301 VOTE S1 rcv req vote from S0
+339302 TIMR S1 reset timer
+339357 VOTE S4 rcv req vote from S0
+339357 TIMR S4 reset timer
+340381 TIMR S3 reset timer
+341635 TIMR S3 reset timer
+343192 ELEC S2 Start election term%!(EXTRA int=41)
+343193 TIMR S2 reset timer
+344014 TIMR S3 reset timer
+346248 ELEC S4 Start election term%!(EXTRA int=47)
+346249 ELEC S1 Start election term%!(EXTRA int=47)
+346250 TIMR S1 reset timer
+346249 TIMR S4 reset timer
+346389 VOTE S0 rcv req vote from S4
+346389 TIMR S0 reset timer
+346389 TIMR S0 reset timer
+346391 VOTE S4 rcv vote from S0
+346451 VOTE S1 rcv req vote from S4
+346507 VOTE S0 rcv req vote from S1
+last one 696
+353414 ELEC S2 Start election term%!(EXTRA int=42)
+353415 TIMR S2 reset timer
+353415 ELEC S3 Start election term%!(EXTRA int=46)
+353416 TIMR S3 reset timer
+353445 VOTE S4 rcv req vote from S2
+353490 VOTE S1 rcv req vote from S2
+353490 VOTE S2 rcv req vote from S3
+353492 TIMR S2 reset timer
+353492 TIMR S2 reset timer
+353492 VOTE S4 rcv req vote from S3
+353490 VOTE S3 rcv req vote from S2
+353490 VOTE S0 rcv req vote from S2
+353495 TIMR S2 reset timer
+353495 TIMR S2 reset timer
+353568 VOTE S0 rcv req vote from S3
+353569 VOTE S1 rcv req vote from S3
+354460 ELEC S0 Start election term%!(EXTRA int=48)
+354461 TIMR S0 reset timer
+354465 VOTE S2 rcv req vote from S0
+354465 TIMR S2 reset timer
+354477 VOTE S4 rcv req vote from S0
+354478 TIMR S4 reset timer
+354739 VOTE S3 rcv req vote from S0
+354740 TIMR S3 reset timer
+354739 VOTE S1 rcv req vote from S0
+354740 TIMR S1 reset timer
+358092 TIMR S3 reset timer
+359860 TIMR S2 reset timer
+360150 VOTE S3 rcv vote from S2
+360613 ELEC S0 Start election term%!(EXTRA int=49)
+360614 TIMR S0 reset timer
+360695 VOTE S1 rcv req vote from S0
+360696 TIMR S1 reset timer
+360699 VOTE S3 rcv req vote from S0
+360700 TIMR S3 reset timer
+360761 VOTE S4 rcv req vote from S0
+360761 TIMR S4 reset timer
+360775 TIMR S3 reset timer
+360850 VOTE S2 rcv req vote from S0
+360850 TIMR S2 reset timer
+367742 ELEC S1 Start election term%!(EXTRA int=50)
+367743 TIMR S1 reset timer
+367760 VOTE S2 rcv req vote from S1
+367761 TIMR S2 reset timer
+367761 TIMR S2 reset timer
+367770 VOTE S3 rcv req vote from S1
+367770 TIMR S3 reset timer
+367850 VOTE S0 rcv req vote from S1
+367850 TIMR S0 reset timer
+367851 TIMR S0 reset timer
+367988 VOTE S4 rcv req vote from S1
+367989 TIMR S4 reset timer
+367989 TIMR S4 reset timer
+368567 TIMR S2 reset timer
+369980 VOTE S1 rcv vote from S2
+370791 VOTE S1 rcv vote from S0
+370792 ELEC S1 Become Leader in term 50
+370792 TIMR S1 reset timer
+370793 TIMR S1 reset timer
+370795 TIMR S1 reset timer
+370796 TIMR S1 reset timer
+370855 TIMR S1 reset timer
+370856 TIMR S1 reset timer
+370914 TIMR S2 reset timer
+370915 INFO S2 conflict S1 index 79
+370917 TIMR S1 reset timer
+370973 TIMR S0 reset timer
+370974 INFO S0 conflict S1 index 52
+370977 TIMR S1 reset timer
+371020 TIMR S4 reset timer
+371020 INFO S4 conflict S1 index 39
+371022 TIMR S1 reset timer
+371087 TIMR S3 reset timer
+371087 INFO S3 conflict S1 index 73
+371088 TIMR S0 reset timer
+371088 INFO S0 conflict S1 index 1
+371090 TIMR S1 reset timer
+371195 TIMR S2 reset timer
+371195 INFO S2 conflict S1 index 79
+371198 TIMR S1 reset timer
+371221 TIMR S4 reset timer
+371222 INFO S4 conflict S1 index 2
+371223 TIMR S0 reset timer
+371224 INFO S0 receive heartbeat from S1
+371224 TIMR S1 reset timer
+371224 CMIT S0 -> chan 2 to 2
+371328 TIMR S2 reset timer
+371330 INFO S2 conflict S1 index 39
+371410 VOTE S1 rcv vote from S4
+371444 TIMR S4 reset timer
+371444 INFO S4 receive heartbeat from S1
+372231 TIMR S1 reset timer
+372327 TIMR S0 reset timer
+372328 INFO S0 receive heartbeat from S1
+375385 TIMR S1 reset timer
+375475 CMIT S1 -> chan 3 to 100
+375478 TIMR S1 reset timer
+375592 TIMR S4 reset timer
+375592 INFO S4 receive heartbeat from S1
+375592 CMIT S4 -> chan 3 to 100
+375633 TIMR S0 reset timer
+375633 INFO S0 receive heartbeat from S1
+376131 TIMR S1 reset timer
+376330 TIMR S3 reset timer
+376331 INFO S3 conflict S1 index 36
+376332 TIMR S1 reset timer
+376589 TIMR S3 reset timer
+376590 INFO S3 conflict S1 index 36
+377907 ELEC S2 Start election term%!(EXTRA int=51)
+377908 TIMR S2 reset timer
+378025 VOTE S3 rcv req vote from S2
+378026 TIMR S3 reset timer
+378114 VOTE S0 rcv req vote from S2
+378114 TIMR S0 reset timer
+378185 VOTE S1 rcv req vote from S2
+378186 TIMR S1 reset timer
+382026 ELEC S4 Start election term%!(EXTRA int=51)
+382027 TIMR S4 reset timer
+382069 VOTE S1 rcv req vote from S4
+382069 TIMR S1 reset timer
+382071 VOTE S4 rcv vote from S1
+382087 VOTE S2 rcv req vote from S4
+382144 VOTE S3 rcv req vote from S4
+382145 TIMR S3 reset timer
+382287 VOTE S0 rcv req vote from S4
+382288 TIMR S0 reset timer
+386098 ELEC S2 Start election term%!(EXTRA int=52)
+386098 TIMR S2 reset timer
+386140 VOTE S0 rcv req vote from S2
+386141 TIMR S0 reset timer
+386143 VOTE S3 rcv req vote from S2
+386143 TIMR S3 reset timer
+386346 VOTE S1 rcv req vote from S2
+386347 TIMR S1 reset timer
+386355 VOTE S4 rcv req vote from S2
+386356 TIMR S4 reset timer
+387853 VOTE S4 rcv vote from S3
+387853 ELEC S4 Become Leader in term 52
+387854 TIMR S4 reset timer
+387856 TIMR S4 reset timer
+387858 TIMR S4 reset timer
+387858 TIMR S4 reset timer
+387903 TIMR S1 reset timer
+387904 INFO S1 receive heartbeat from S4
+387914 TIMR S2 reset timer
+387915 INFO S2 conflict S4 index 79
+387973 TIMR S0 reset timer
+387974 INFO S0 receive heartbeat from S4
+387974 CMIT S0 -> chan 3 to 100
+388089 TIMR S3 reset timer
+388090 INFO S3 conflict S4 index 73
+388091 TIMR S4 reset timer
+388293 TIMR S3 reset timer
+388294 INFO S3 conflict S4 index 36
+388297 TIMR S4 reset timer
+388342 TIMR S3 reset timer
+388343 INFO S3 conflict S4 index 3
+388911 TIMR S4 reset timer
+389034 TIMR S1 reset timer
+389035 INFO S1 receive heartbeat from S4
+389036 TIMR S4 reset timer
+389063 TIMR S1 reset timer
+389063 INFO S1 receive heartbeat from S4
+390951 VOTE S4 rcv vote from S0
+393318 TIMR S4 reset timer
+393472 TIMR S0 reset timer
+393473 INFO S0 receive heartbeat from S4
+394374 TIMR S4 reset timer
+394486 TIMR S4 reset timer
+394612 TIMR S2 reset timer
+394613 INFO S2 conflict S4 index 39
+394615 TIMR S4 reset timer
+394633 TIMR S0 reset timer
+394634 INFO S0 receive heartbeat from S4
+394682 TIMR S4 reset timer
+394750 TIMR S2 reset timer
+394750 INFO S2 conflict S4 index 2
+394752 TIMR S4 reset timer
+394807 TIMR S2 reset timer
+394807 INFO S2 conflict S4 index 2
+394810 TIMR S4 reset timer
+394842 TIMR S2 reset timer
+394842 INFO S2 receive heartbeat from S4
+394842 CMIT S2 -> chan 3 to 100
+394847 CMIT S4 -> chan 101 to 101
+394848 TIMR S4 reset timer
+395114 TIMR S2 reset timer
+395115 INFO S2 receive heartbeat from S4
+395115 CMIT S2 -> chan 101 to 101
+395255 ELEC S3 Start election term%!(EXTRA int=53)
+395256 TIMR S3 reset timer
+395261 VOTE S2 rcv req vote from S3
+395262 VOTE S0 rcv req vote from S3
+395263 TIMR S0 reset timer
+395263 TIMR S2 reset timer
+395327 VOTE S1 rcv req vote from S3
+395328 TIMR S1 reset timer
+395404 VOTE S4 rcv req vote from S3
+395404 TIMR S4 reset timer
+402384 ELEC S1 Start election term%!(EXTRA int=54)
+402385 TIMR S1 reset timer
+402552 VOTE S4 rcv req vote from S1
+402553 TIMR S4 reset timer
+402647 VOTE S2 rcv req vote from S1
+402648 TIMR S2 reset timer
+402647 VOTE S0 rcv req vote from S1
+402649 TIMR S0 reset timer
+404407 ELEC S3 Start election term%!(EXTRA int=54)
+404408 TIMR S3 reset timer
+404468 VOTE S4 rcv req vote from S3
+404542 VOTE S0 rcv req vote from S3
+408470 ELEC S2 Start election term%!(EXTRA int=55)
+408471 TIMR S2 reset timer
+408558 VOTE S0 rcv req vote from S2
+408559 TIMR S0 reset timer
+408559 TIMR S0 reset timer
+408562 VOTE S3 rcv req vote from S2
+408563 TIMR S3 reset timer
+408563 TIMR S3 reset timer
+408564 VOTE S2 rcv vote from S3
+408599 VOTE S4 rcv req vote from S2
+408600 TIMR S4 reset timer
+408600 TIMR S4 reset timer
+408601 VOTE S2 rcv vote from S4
+408601 ELEC S2 Become Leader in term 55
+408601 TIMR S2 reset timer
+408602 TIMR S2 reset timer
+408602 TIMR S2 reset timer
+408603 TIMR S2 reset timer
+408799 TIMR S4 reset timer
+408800 INFO S4 receive heartbeat from S2
+408897 TIMR S1 reset timer
+408898 INFO S1 conflict S2 index 101
+408902 TIMR S3 reset timer
+408903 INFO S3 conflict S2 index 73
+408904 TIMR S2 reset timer
+408906 TIMR S0 reset timer
+408906 INFO S0 receive heartbeat from S2
+408906 CMIT S0 -> chan 101 to 101
+409212 TIMR S2 reset timer
+409228 TIMR S3 reset timer
+409229 INFO S3 conflict S2 index 73
+410670 VOTE S2 rcv vote from S0
+412130 TIMR S2 reset timer
+412186 TIMR S0 reset timer
+412186 INFO S0 receive heartbeat from S2
+412188 TIMR S2 reset timer
+412288 TIMR S0 reset timer
+412289 INFO S0 receive heartbeat from S2
+412405 TIMR S2 reset timer
+412668 TIMR S1 reset timer
+412669 INFO S1 receive heartbeat from S2
+412669 CMIT S1 -> chan 101 to 101
+413671 TIMR S2 reset timer
+413833 TIMR S2 reset timer
+413941 TIMR S1 reset timer
+413942 INFO S1 receive heartbeat from S2
+415586 ELEC S3 Start election term%!(EXTRA int=56)
+415588 TIMR S3 reset timer
+415619 VOTE S2 rcv req vote from S3
+415619 TIMR S2 reset timer
+415723 VOTE S4 rcv req vote from S3
+415723 TIMR S4 reset timer
+415799 VOTE S1 rcv req vote from S3
+415800 TIMR S1 reset timer
+415799 VOTE S0 rcv req vote from S3
+415800 TIMR S0 reset timer
+421683 ELEC S0 Start election term%!(EXTRA int=57)
+421684 TIMR S0 reset timer
+421726 VOTE S4 rcv req vote from S0
+421726 TIMR S4 reset timer
+421727 TIMR S4 reset timer
+421728 VOTE S0 rcv vote from S4
+421785 VOTE S1 rcv req vote from S0
+421786 TIMR S1 reset timer
+421786 TIMR S1 reset timer
+421799 VOTE S2 rcv req vote from S0
+421800 TIMR S2 reset timer
+421800 TIMR S2 reset timer
+421862 VOTE S3 rcv req vote from S0
+421863 TIMR S3 reset timer
+421863 TIMR S3 reset timer
+427745 ELEC S0 Start election term%!(EXTRA int=58)
+427746 TIMR S0 reset timer
+427777 VOTE S3 rcv req vote from S0
+427778 TIMR S3 reset timer
+427778 TIMR S3 reset timer
+427780 VOTE S0 rcv vote from S3
+427780 VOTE S1 rcv req vote from S0
+427781 TIMR S1 reset timer
+427781 TIMR S1 reset timer
+427783 VOTE S0 rcv vote from S1
+427783 ELEC S0 Become Leader in term 58
+427783 TIMR S0 reset timer
+427784 TIMR S0 reset timer
+427785 TIMR S0 reset timer
+427786 TIMR S0 reset timer
+427813 TIMR S4 reset timer
+427814 INFO S4 conflict S0 index 102
+427821 VOTE S2 rcv req vote from S0
+427822 TIMR S2 reset timer
+427822 TIMR S2 reset timer
+427821 VOTE S4 rcv req vote from S0
+427823 TIMR S4 reset timer
+427823 VOTE S0 rcv vote from S2
+427869 TIMR S3 reset timer
+427870 INFO S3 conflict S0 index 73
+427894 TIMR S1 reset timer
+427895 INFO S1 receive heartbeat from S0
+428067 TIMR S2 reset timer
+428067 INFO S2 receive heartbeat from S0
+428899 TIMR S0 reset timer
+428954 TIMR S1 reset timer
+428955 INFO S1 receive heartbeat from S0
+429077 TIMR S0 reset timer
+429288 TIMR S2 reset timer
+429289 INFO S2 receive heartbeat from S0
+429975 TIMR S0 reset timer
+430101 TIMR S1 reset timer
+430102 INFO S1 receive heartbeat from S0
+431132 TIMR S0 reset timer
+431375 TIMR S1 reset timer
+431376 INFO S1 receive heartbeat from S0
+434660 VOTE S0 rcv vote from S3
+434896 ELEC S2 Start election term%!(EXTRA int=59)
+434896 TIMR S2 reset timer
+434913 TIMR S0 reset timer
+434915 VOTE S3 rcv req vote from S2
+434916 TIMR S3 reset timer
+434916 TIMR S3 reset timer
+434922 VOTE S0 rcv req vote from S2
+434923 TIMR S0 reset timer
+435034 VOTE S1 rcv req vote from S2
+435035 TIMR S1 reset timer
+435094 INFO S2 conflict S0 index -1
+437813 VOTE S2 rcv vote from S3
+437936 ELEC S4 Start election term%!(EXTRA int=59)
+437937 TIMR S4 reset timer
+437987 VOTE S3 rcv req vote from S4
+438035 VOTE S2 rcv req vote from S4
+438166 VOTE S0 rcv req vote from S4
+438187 VOTE S1 rcv req vote from S4
+441769 VOTE S0 rcv vote from S4
+441770 ELEC S0 Become Leader in term 59
+441770 TIMR S0 reset timer
+441770 TIMR S0 reset timer
+441772 TIMR S0 reset timer
+441773 TIMR S0 reset timer
+441791 TIMR S3 reset timer
+441792 INFO S3 conflict S0 index 73
+441858 TIMR S4 reset timer
+441859 INFO S4 conflict S0 index 102
+441862 TIMR S0 reset timer
+441868 TIMR S1 reset timer
+441869 INFO S1 receive heartbeat from S0
+441978 TIMR S2 reset timer
+441979 INFO S2 conflict S0 index 103
+442118 TIMR S4 reset timer
+442119 INFO S4 receive heartbeat from S0
+446529 TIMR S0 reset timer
+446632 TIMR S0 reset timer
+446700 TIMR S4 reset timer
+446701 INFO S4 receive heartbeat from S0
+447487 TIMR S0 reset timer
+447709 TIMR S0 reset timer
+447864 TIMR S3 reset timer
+447865 INFO S3 conflict S0 index 36
+447868 TIMR S0 reset timer
+447972 TIMR S0 reset timer
+448080 TIMR S3 reset timer
+448080 INFO S3 conflict S0 index 3
+448082 TIMR S0 reset timer
+448329 TIMR S3 reset timer
+448330 INFO S3 conflict S0 index 3
+448332 TIMR S0 reset timer
+448504 TIMR S3 reset timer
+448504 INFO S3 conflict S0 index 3
+448507 TIMR S0 reset timer
+448649 TIMR S3 reset timer
+448650 INFO S3 receive heartbeat from S0
+448650 CMIT S3 -> chan 3 to 101
+449657 TIMR S0 reset timer
+449841 TIMR S3 reset timer
+449842 INFO S3 receive heartbeat from S0
+451113 ELEC S1 Start election term%!(EXTRA int=60)
+451114 ELEC S2 Start election term%!(EXTRA int=60)
+451114 TIMR S2 reset timer
+451114 TIMR S1 reset timer
+451118 VOTE S0 rcv req vote from S2
+451119 TIMR S0 reset timer
+451241 VOTE S4 rcv req vote from S2
+451242 TIMR S4 reset timer
+451252 VOTE S2 rcv req vote from S1
+451262 VOTE S3 rcv req vote from S1
+451263 TIMR S3 reset timer
+451263 TIMR S3 reset timer
+451285 VOTE S4 rcv req vote from S1
+451285 TIMR S4 reset timer
+451303 VOTE S3 rcv req vote from S2
+451325 VOTE S1 rcv req vote from S2
+451391 VOTE S0 rcv req vote from S1
+453727 VOTE S1 rcv vote from S3
+453728 VOTE S1 rcv vote from S4
+453728 ELEC S1 Become Leader in term 60
+453729 TIMR S1 reset timer
+453729 TIMR S1 reset timer
+453730 TIMR S1 reset timer
+453731 TIMR S1 reset timer
+453732 TIMR S4 reset timer
+453733 INFO S4 receive heartbeat from S1
+453845 TIMR S2 reset timer
+453846 INFO S2 conflict S1 index 103
+453869 TIMR S1 reset timer
+453960 TIMR S0 reset timer
+453960 INFO S0 receive heartbeat from S1
+454132 TIMR S1 reset timer
+454160 TIMR S3 reset timer
+454160 INFO S3 receive heartbeat from S1
+457809 TIMR S1 reset timer
+457936 TIMR S1 reset timer
+458021 TIMR S1 reset timer
+458039 TIMR S0 reset timer
+458039 INFO S0 receive heartbeat from S1
+459122 TIMR S1 reset timer
+459301 TIMR S4 reset timer
+459302 INFO S4 receive heartbeat from S1
+461642 TIMR S1 reset timer
+461869 TIMR S3 reset timer
+461870 INFO S3 receive heartbeat from S1
+462898 TIMR S1 reset timer
+463074 TIMR S3 reset timer
+463074 INFO S3 receive heartbeat from S1
+463280 ELEC S2 Start election term%!(EXTRA int=61)
+463280 TIMR S2 reset timer
+463284 VOTE S0 rcv req vote from S2
+463284 TIMR S0 reset timer
+463299 VOTE S1 rcv req vote from S2
+463299 TIMR S1 reset timer
+463345 VOTE S3 rcv req vote from S2
+463346 TIMR S3 reset timer
+463390 VOTE S4 rcv req vote from S2
+463391 TIMR S4 reset timer
+469355 ELEC S4 Start election term%!(EXTRA int=62)
+469356 TIMR S4 reset timer
+469360 VOTE S2 rcv req vote from S4
+469360 TIMR S2 reset timer
+469360 TIMR S2 reset timer
+469449 VOTE S3 rcv req vote from S4
+469450 TIMR S3 reset timer
+469450 TIMR S3 reset timer
+469449 VOTE S0 rcv req vote from S4
+469451 TIMR S0 reset timer
+469476 VOTE S1 rcv req vote from S4
+469477 TIMR S1 reset timer
+469477 TIMR S1 reset timer
+469479 VOTE S4 rcv vote from S1
+--- FAIL: TestFigure8Unreliable2C (47.10s)
+    config.go:605: one(696) failed to reach agreement
+FAIL
+exit status 1
+FAIL	6.5840/raft	47.557s

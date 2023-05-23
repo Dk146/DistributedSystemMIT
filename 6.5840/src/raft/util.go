@@ -28,17 +28,15 @@ const (
 	dInfo     logTopic = "INFO"
 	dLeader   logTopic = "LEAD"
 	dLog      logTopic = "LOG1"
-	dLog2     logTopic = "LOG2"
+	dELEC     logTopic = "ELEC"
 	dPersist  logTopic = "PERS"
 	dSnap     logTopic = "SNAP"
 	dTerm     logTopic = "TERM"
-	dTest     logTopic = "TEST"
+	dConflict logTopic = "CONF"
 	dTimer    logTopic = "TIMR"
 	dTrace    logTopic = "TRCE"
 	dVote     logTopic = "VOTE"
 	dWarn     logTopic = "WARN"
-	dHearBeat logTopic = "HBRT"
-	dElection logTopic = "ELCT"
 )
 
 var debugStart time.Time

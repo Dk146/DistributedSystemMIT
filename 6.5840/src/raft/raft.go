@@ -233,7 +233,7 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 
 	reply.VoteGranted = false
 	reply.Term = rf.currentTerm
-	Debug(dVote, "ID: %d - request term: %d - ID: %d - current term : %d", args.CandidatedId, args.Term, rf.me, rf.currentTerm)
+	Debug(dVote, "S%d rcv req vote from S%d", rf.me, args.CandidatedId)
 	if rf.currentTerm > args.Term {
 		return
 	}
@@ -359,11 +359,10 @@ func (rf *Raft) ticker() {
 		rf.mu.Lock()
 		diffTime := now.Sub(rf.lastHeartBeat).Milliseconds()
 		if diffTime > int64(rf.nextTimer) && rf.state != Leader {
-			Debug(dElection, "ID: %d Start election", rf.me)
-			// fmt.Println(rf.me, " Start election", rf.currentTerm)
 			rf.state = Candidate
 			rf.currentTerm++
 			rf.votedFor = rf.me
+			Debug(dELEC, "S%d Start election term", rf.me, rf.currentTerm)
 			rf.mu.Unlock()
 			rf.startElection()
 		} else {
@@ -396,10 +395,10 @@ func (rf *Raft) startElection() {
 				rf.mu.Lock()
 				count++
 				//win election
+				Debug(dVote, "S%d rcv vote from S%d", me, i)
 				if count >= peerLen/2+1 {
 					if rf.state != Leader {
-						Debug(dElection, "ID: %d Become Leader in term %d", rf.me, rf.currentTerm)
-						// fmt.Println(rf.me, " Become Leader in term ", rf.currentTerm)
+						Debug(dELEC, "S%d Become Leader in term %d", me, rf.currentTerm)
 						rf.leaderInit()
 						go rf.PeriodHeartBeat()
 					}
@@ -425,7 +424,6 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	if len(args.Entries) > 0 {
 		// fmt.Println(rf.me, " receive from ", args.LeaderID, args.Entries, args.PrevLogIndex, args.PrevLogTerm)
 	}
-	// fmt.Println(args.LeaderCommitIndex, rf.commitIndex)
 	reply.Term = rf.currentTerm
 	reply.Success = true
 
@@ -446,13 +444,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		reply.ConflictIndex = -1
 	}
 
-	// if args.PrevLogIndex > 0 && (!rf.isLogAtIndexExist(args.PrevLogIndex) || rf.getLogEntryAtIndex(args.PrevLogIndex).Term != args.PrevLogTerm) {
-	// 	// fmt.Println(args.PrevLogIndex, len(rf.log))
-	// 	reply.Success = false
-	// }
-
 	if args.PrevLogIndex > 0 && !rf.isLogAtIndexExist(args.PrevLogIndex) {
-		// fmt.Println(args.PrevLogIndex, len(rf.log))
 		reply.ConflicTerm = -1
 		reply.ConflictIndex = len(rf.log) + 1
 		reply.Success = false
@@ -461,27 +453,23 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	if args.PrevLogIndex > 0 && rf.isLogAtIndexExist(args.PrevLogIndex) && rf.getLogEntryAtIndex(args.PrevLogIndex).Term != args.PrevLogTerm {
 		curTerm := rf.getLogEntryAtIndex(args.PrevLogIndex).Term
 		for i := args.PrevLogIndex; i >= 0; i-- {
-			// if xindex, xterm := rf.getLastLogIndexAndTerm(); xterm != curTerm {
-			// 	reply.ConflicTerm = xterm
-			// 	reply.ConflictIndex = xindex + 1
-			// 	break
-			// }
-			// fmt.Println("CHECK CHECK")
 			if rf.getLogEntryAtIndex(i).Term != curTerm {
-				// fmt.Println(rf.getLogEntryAtIndex(i).Term, i)
 				reply.ConflictIndex = i + 1
-				// fmt.Println("idx", reply.ConflictIndex)
 				break
 			}
 		}
-		// fmt.Println(args.PrevLogIndex, len(rf.log))
 		reply.Success = false
 	}
 
 	if !reply.Success {
+		Debug(dInfo, "S%d conflict S%d index %d", rf.me, args.LeaderID, reply.ConflictIndex)
 		return
 	}
-	// fmt.Println("Go through")
+
+	if len(rf.log) == 0 {
+	}
+	Debug(dInfo, "S%d receive heartbeat from S%d", rf.me, args.LeaderID)
+
 	for i, entry := range args.Entries {
 		if rf.isLogAtIndexExist(args.PrevLogIndex + 1 + i) {
 			if rf.getLogEntryAtIndex(args.PrevLogIndex+1+i).Term != entry.Term {
@@ -492,12 +480,6 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 			rf.log = append(rf.log, entry)
 		}
 	}
-	// if len(args.Entries) > 0 {
-	// fmt.Println("current log", rf.me, rf.log)
-	// }
-	// if args.LeaderCommitIndex > rf.commitIndex {
-	// 	rf.commitIndex = int(math.Min(float64(args.LeaderCommitIndex), float64(len(rf.log))))
-	// }
 
 	if args.LeaderCommitIndex > rf.commitIndex {
 		if len(args.Entries) > 0 && args.LeaderCommitIndex > args.PrevLogIndex+len(args.Entries) {
@@ -506,18 +488,14 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 			rf.commitIndex = args.LeaderCommitIndex
 		}
 	}
-	// fmt.Println("Applies entry")
+
 	rf.applyEntries()
-	rf.resetTimer()
-	Debug(dInfo, "ID: %d term %d - receive heartbeat from - ID: %d term %d", rf.me, rf.currentTerm, args.LeaderID, args.Term)
-	// TODO: implement
 }
 
 func (rf *Raft) PeriodHeartBeat() {
 	// for rf.killed() == false {
 	rf.mu.Lock()
 	// fmt.Println("PeriodHeartBeat server leader ID: ", rf.me)
-	// rf.resetTimer()
 	rf.mu.Unlock()
 	for i := 0; i < len(rf.peers); i++ {
 		if i == rf.me {
@@ -571,10 +549,6 @@ func (rf *Raft) PeriodHeartBeat() {
 							sleep = false
 						}
 					} else {
-						// if rf.nextIndex[i] > 1 {
-						// 	rf.nextIndex[i] = rf.nextIndex[i] - 1
-						// }
-
 						if reply.ConflictIndex != -1 {
 							rf.nextIndex[i] = reply.ConflictIndex
 						}
@@ -584,7 +558,7 @@ func (rf *Raft) PeriodHeartBeat() {
 					rf.mu.Unlock()
 				}
 				if !ok {
-					// DPrintf("leader %v sent AppendEntries to %v but no reply from ", leader, peerIndex)
+					sleep = false
 				}
 
 				if sleep {
@@ -606,6 +580,7 @@ func (rf *Raft) PeriodHeartBeat() {
 func (rf *Raft) resetTimer() {
 	rf.lastHeartBeat = time.Now()
 	rf.nextTimer = 550 + (rand.Int() % 400)
+	Debug(dTimer, "S%d reset timer", rf.me)
 }
 
 func (rf *Raft) leaderInit() {
@@ -639,6 +614,9 @@ func (rf *Raft) updateCommitedIndex() bool {
 
 func (rf *Raft) applyEntries() bool {
 	res := false
+	if rf.lastApplied < rf.commitIndex {
+		Debug(dCommit, "S%d -> chan %d to %d", rf.me, rf.lastApplied+1, rf.commitIndex)
+	}
 	for rf.lastApplied < rf.commitIndex {
 		res = true
 		rf.lastApplied += 1
@@ -680,6 +658,7 @@ func (rf *Raft) stepDown(term int) {
 	rf.currentTerm = term
 	rf.state = Follower
 	rf.votedFor = -1
+	rf.resetTimer()
 }
 
 func (rf *Raft) getLastLogIndexAndTerm() (int, int) {
