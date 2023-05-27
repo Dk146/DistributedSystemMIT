@@ -543,74 +543,73 @@ func (rf *Raft) PeriodHeartBeat() {
 					rf.mu.Unlock()
 					break
 				}
-				preLogIndex := rf.nextIndex[i] - 1
-				preLogTerm := 0
-				var entries []LogEntry
-				if rf.isLogAtIndexExist(preLogIndex) {
-					preLogTerm = rf.getLogEntryAtIndex(preLogIndex).Term
-					entries = rf.log[preLogIndex:]
-				} else {
-					entries = rf.log[:]
-				}
-				args := AppendEntriesArgs{
-					Term:              rf.currentTerm,
-					LeaderID:          rf.me,
-					PrevLogIndex:      preLogIndex,
-					PrevLogTerm:       preLogTerm,
-					Entries:           entries,
-					LeaderCommitIndex: rf.commitIndex,
-				}
-				reply := AppendEntriesReply{}
-				if len(args.Entries) > 0 {
-					// fmt.Println(rf.me, " send to ", i, args.Entries, args.PrevLogIndex, args.PrevLogTerm, args.LeaderCommitIndex)
-				}
-				Debug(dInfo, "S%d send append entries to S%d", rf.me, i)
 				rf.mu.Unlock()
-				ok := rf.sendAppendEntries(i, &args, &reply)
-				sleep := true
-				if ok {
+				go func(i int) {
 					rf.mu.Lock()
-					Debug(dInfo, "S%d success to send entries to S%d", rf.me, i)
-					if rf.state != Leader {
-						rf.mu.Unlock()
-						return
-					}
-					if reply.Success {
-						rf.resetTimer()
-						if len(args.Entries) > 0 {
-							// fmt.Println(rf.me, " received ack from ", i, args.Entries, args.PrevLogIndex, args.PrevLogTerm)
-						}
-						rf.nextIndex[i] = rf.nextIndex[i] + len(args.Entries)
-						rf.matchIndex[i] = rf.nextIndex[i] - 1
-						if rf.updateCommitedIndex() {
-							sleep = false
-						}
+					preLogIndex := rf.nextIndex[i] - 1
+					preLogTerm := 0
+					var entries []LogEntry
+					if rf.isLogAtIndexExist(preLogIndex) {
+						preLogTerm = rf.getLogEntryAtIndex(preLogIndex).Term
+						entries = rf.log[preLogIndex:]
 					} else {
-						if reply.ConflictIndex != -1 {
-							rf.nextIndex[i] = reply.ConflictIndex
+						entries = rf.log[:]
+					}
+					args := AppendEntriesArgs{
+						Term:              rf.currentTerm,
+						LeaderID:          rf.me,
+						PrevLogIndex:      preLogIndex,
+						PrevLogTerm:       preLogTerm,
+						Entries:           entries,
+						LeaderCommitIndex: rf.commitIndex,
+					}
+					reply := AppendEntriesReply{}
+					if len(args.Entries) > 0 {
+						// fmt.Println(rf.me, " send to ", i, args.Entries, args.PrevLogIndex, args.PrevLogTerm, args.LeaderCommitIndex)
+					}
+					Debug(dInfo, "S%d send append entries to S%d", rf.me, i)
+					rf.mu.Unlock()
+					ok := rf.sendAppendEntries(i, &args, &reply)
+					if ok {
+						rf.mu.Lock()
+						Debug(dInfo, "S%d success to send entries to S%d", rf.me, i)
+						if rf.state != Leader {
+							rf.mu.Unlock()
+							return
 						}
+						if reply.Success {
+							rf.resetTimer()
+							if len(args.Entries) > 0 {
+								// fmt.Println(rf.me, " received ack from ", i, args.Entries, args.PrevLogIndex, args.PrevLogTerm)
+							}
+							if rf.nextIndex[i]-1 == args.PrevLogIndex {
+								rf.nextIndex[i] = rf.nextIndex[i] + len(args.Entries)
+								rf.matchIndex[i] = rf.nextIndex[i] - 1
+							}
+							if rf.updateCommitedIndex() {
+							}
+						} else {
+							if reply.ConflictIndex != -1 {
+								rf.nextIndex[i] = reply.ConflictIndex
+							}
 
-						sleep = false
+						}
+						rf.mu.Unlock()
+					}
+					if !ok {
+						rf.mu.Lock()
+						Debug(dInfo, "S%d fail to send entries to S%d", rf.me, i)
+						rf.mu.Unlock()
+					}
+
+					rf.mu.Lock()
+					if reply.Term > rf.currentTerm {
+						rf.stepDown(reply.Term)
 					}
 					rf.mu.Unlock()
-				}
-				if !ok {
-					rf.mu.Lock()
-					Debug(dInfo, "S%d fail to send entries to S%d", rf.me, i)
-					rf.mu.Unlock()
-					sleep = false
-				}
-
-				if sleep {
-					constraint := 10
-					time.Sleep(time.Second / time.Duration(constraint))
-				}
-
-				rf.mu.Lock()
-				if reply.Term > rf.currentTerm {
-					rf.stepDown(reply.Term)
-				}
-				rf.mu.Unlock()
+				}(i)
+				constraint := 10
+				time.Sleep(time.Second / time.Duration(constraint))
 			}
 		}(i)
 	}
