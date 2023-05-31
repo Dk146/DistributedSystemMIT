@@ -448,9 +448,6 @@ func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *Ap
 func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
-	if len(args.Entries) > 0 {
-		// fmt.Println(rf.me, " receive from ", args.LeaderID, args.Entries, args.PrevLogIndex, args.PrevLogTerm)
-	}
 	reply.Term = rf.currentTerm
 	reply.Success = true
 
@@ -528,7 +525,6 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 }
 
 func (rf *Raft) PeriodHeartBeat() {
-	// for rf.killed() == false {
 	rf.mu.Lock()
 	npeers := len(rf.peers)
 	rf.mu.Unlock()
@@ -564,9 +560,6 @@ func (rf *Raft) PeriodHeartBeat() {
 						LeaderCommitIndex: rf.commitIndex,
 					}
 					reply := AppendEntriesReply{}
-					if len(args.Entries) > 0 {
-						// fmt.Println(rf.me, " send to ", i, args.Entries, args.PrevLogIndex, args.PrevLogTerm, args.LeaderCommitIndex)
-					}
 					Debug(dInfo, "S%d send append entries to S%d", rf.me, i)
 					rf.mu.Unlock()
 					ok := rf.sendAppendEntries(i, &args, &reply)
@@ -579,15 +572,11 @@ func (rf *Raft) PeriodHeartBeat() {
 						}
 						if reply.Success {
 							rf.resetTimer()
-							if len(args.Entries) > 0 {
-								// fmt.Println(rf.me, " received ack from ", i, args.Entries, args.PrevLogIndex, args.PrevLogTerm)
-							}
 							if rf.nextIndex[i]-1 == args.PrevLogIndex {
 								rf.nextIndex[i] = rf.nextIndex[i] + len(args.Entries)
 								rf.matchIndex[i] = rf.nextIndex[i] - 1
 							}
-							if rf.updateCommitedIndex() {
-							}
+							rf.updateCommitedIndex()
 						} else {
 							if reply.ConflictIndex != -1 {
 								rf.nextIndex[i] = reply.ConflictIndex
@@ -662,7 +651,6 @@ func (rf *Raft) applyEntries() bool {
 		rf.lastApplied += 1
 		command := rf.getLogEntryAtIndex(rf.lastApplied).Command
 		i := rf.lastApplied
-		// fmt.Println(rf.me, "Send to chan", i, command)
 		rf.applyChan <- ApplyMsg{
 			CommandValid: true,
 			CommandIndex: i,
@@ -699,7 +687,6 @@ func (rf *Raft) stepDown(term int) {
 	rf.state = Follower
 	rf.votedFor = -1
 	rf.persist()
-	// rf.resetTimer()
 }
 
 func (rf *Raft) getLastLogIndexAndTerm() (int, int) {
