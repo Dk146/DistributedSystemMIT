@@ -83,8 +83,10 @@ type Raft struct {
 	nextTimer     int
 
 	// Volatile state on all servers
-	commitIndex int
-	lastApplied int
+	commitIndex       int
+	lastApplied       int
+	LastIncludedIndex int
+	LastIncludedTerm  int
 
 	// Volatile state on leaders
 	// Reinitialized after election
@@ -95,6 +97,7 @@ type Raft struct {
 type LogEntry struct {
 	Term    int
 	Command interface{}
+	Index   int
 }
 
 type AppendEntriesArgs struct {
@@ -173,7 +176,9 @@ func (rf *Raft) persist() {
 	e := labgob.NewEncoder(w)
 	if e.Encode(rf.currentTerm) != nil ||
 		e.Encode(rf.votedFor) != nil ||
-		e.Encode(rf.log) != nil {
+		e.Encode(rf.log) != nil ||
+		e.Encode(rf.LastIncludedIndex) != nil ||
+		e.Encode(rf.LastIncludedTerm) != nil {
 	} else {
 		data := w.Bytes()
 		rf.persister.Save(data, nil)
@@ -211,11 +216,13 @@ func (rf *Raft) readPersist(data []byte) {
 	// Your code here (2C).
 	r := bytes.NewBuffer(data)
 	d := labgob.NewDecoder(r)
-	var currentTerm, votedFor int
+	var currentTerm, votedFor, lastIncludedIndex, lastIncludedTerm int
 	var logs []LogEntry
 	if d.Decode(&currentTerm) != nil ||
 		d.Decode(&votedFor) != nil ||
-		d.Decode(&logs) != nil {
+		d.Decode(&logs) != nil ||
+		d.Decode(&lastIncludedIndex) != nil ||
+		d.Decode(&lastIncludedTerm) != nil {
 	} else {
 		rf.currentTerm = currentTerm
 		rf.votedFor = votedFor
@@ -336,8 +343,9 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	term, isLeader = rf.GetState()
 	if isLeader {
 		rf.mu.Lock()
-		rf.log = append(rf.log, LogEntry{Term: term, Command: command})
-		index = len(rf.log)
+		// index = len(rf.log)
+		index = rf.nextIndex[rf.me]
+		rf.log = append(rf.log, LogEntry{Term: term, Command: command, Index: index})
 		rf.nextIndex[rf.me]++
 		rf.persist()
 		Debug(dInfo, "S%d append index %d", rf.me, index)
@@ -665,21 +673,25 @@ func (rf *Raft) isLogAtIndexExist(index int) bool {
 }
 
 func (rf *Raft) getLastLogIndex() int {
-	return len(rf.log)
+	res := len(rf.log)
+	if res == 0 {
+		return rf.LastIncludedIndex
+	}
+	return rf.log[len(rf.log)-1].Index
 }
 
 func (rf *Raft) getLastLogTerm() int {
 	if len(rf.log) > 0 {
 		return rf.log[len(rf.log)-1].Term
 	}
-	return 0
+	return rf.LastIncludedTerm
 }
 
 func (rf *Raft) getLogEntryAtIndex(index int) LogEntry {
 	if index == 0 {
 		return LogEntry{Term: 0}
 	}
-	return rf.log[index-1]
+	return rf.log[index-rf.LastIncludedIndex-1]
 }
 
 func (rf *Raft) stepDown(term int) {
@@ -723,6 +735,8 @@ func Make(peers []*labrpc.ClientEnd, me int,
 	rf.state = Follower
 	rf.applyChan = applyCh
 	rf.commitIndex = 0
+	rf.LastIncludedIndex = 0
+	rf.LastIncludedTerm = 0
 
 	// initialize from state persisted before a crash
 	rf.readPersist(persister.ReadRaftState())
